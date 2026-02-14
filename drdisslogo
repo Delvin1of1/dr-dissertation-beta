@@ -1,0 +1,63 @@
+<svg width="560" height="120" viewBox="0 0 560 120" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- DD Character with Graduation Cap -->
+  <g transform="translate(10, 10)">
+    <!-- Left D - Body -->
+    <ellipse cx="24" cy="50" rx="22" ry="30" fill="#6366F1"/>
+    <rect x="24" y="20" width="16" height="60" fill="#6366F1"/>
+    
+    <!-- Right D - Body -->
+    <ellipse cx="76" cy="50" rx="22" ry="30" fill="#8B5CF6"/>
+    <rect x="60" y="20" width="16" height="60" fill="#8B5CF6"/>
+    
+    <!-- Graduation Cap -->
+    <g transform="translate(30, 0)">
+      <rect x="0" y="16" width="40" height="8" fill="#1E293B" rx="2"/>
+      <polygon points="20,0 -10,16 50,16" fill="#1E293B"/>
+      <rect x="36" y="16" width="3" height="16" fill="#F59E0B"/>
+      <circle cx="38" cy="34" r="4" fill="#F59E0B"/>
+    </g>
+    
+    <!-- Eyes -->
+    <circle cx="18" cy="46" r="4" fill="white"/>
+    <circle cx="30" cy="46" r="4" fill="white"/>
+    <circle cx="70" cy="46" r="4" fill="white"/>
+    <circle cx="82" cy="46" r="4" fill="white"/>
+    
+    <circle cx="19" cy="46" r="2" fill="#1E293B"/>
+    <circle cx="31" cy="46" r="2" fill="#1E293B"/>
+    <circle cx="71" cy="46" r="2" fill="#1E293B"/>
+    <circle cx="83" cy="46" r="2" fill="#1E293B"/>
+    
+    <!-- Smiles -->
+    <path d="M 16 56 Q 24 62 32 56" stroke="white" stroke-width="3" fill="none" stroke-linecap="round"/>
+    <path d="M 68 56 Q 76 62 84 56" stroke="white" stroke-width="3" fill="none" stroke-linecap="round"/>
+    
+    <!-- Pen in hand -->
+    <g transform="translate(84, 60) rotate(-30)">
+      <rect x="0" y="0" width="4" height="24" fill="#F59E0B" rx="1"/>
+      <polygon points="2,24 0,30 4,30" fill="#1E293B"/>
+    </g>
+    
+    <!-- Paper/document -->
+    <rect x="96" y="30" width="24" height="32" fill="white" opacity="0.3" rx="2"/>
+    <line x1="100" y1="38" x2="116" y2="38" stroke="#10B981" stroke-width="3" opacity="0.5"/>
+    <line x1="100" y1="46" x2="116" y2="46" stroke="#10B981" stroke-width="3" opacity="0.5"/>
+    <line x1="100" y1="54" x2="116" y2="54" stroke="#10B981" stroke-width="3" opacity="0.5"/>
+    
+    <!-- Checkmarks -->
+    <path d="M 96 36 L 100 40 L 106 32" stroke="#10B981" stroke-width="3" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+    <path d="M 96 44 L 100 48 L 106 40" stroke="#10B981" stroke-width="3" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+  </g>
+  
+  <!-- American Typewriter font - DR. DISSERTATION -->
+  <!-- Character positioning: D aligns with A, n aligns with w -->
+  <text x="150" y="65" font-family="'American Typewriter', 'Courier New', monospace" font-size="36" font-weight="600" fill="#1E293B">
+    DR. DISSERTATION
+  </text>
+  
+  <!-- Tagline perfectly aligned -->
+  <!-- A under D, w under n -->
+  <text x="150" y="90" font-family="'Inter', Arial, sans-serif" font-size="10.5" font-weight="600" fill="#6366F1" letter-spacing="4.2">
+    AI-POWERED DISSERTATION REVIEW
+  </text>
+</svg>

@@ -1,18 +1,12 @@
 // pages/api/process-review.js
-
 import Anthropic from "@anthropic-ai/sdk";
 import { PDFDocument } from "pdf-lib";
-import { getHAISTPrompt, HAIST_SYSTEM_PROMPT } from "./haist-prompt.js";
+import { HAIST_SYSTEM_PROMPT } from "./haist-prompt.js";
 
 export const config = {
-  maxDuration: 300, // 5 minutes
-  api: {
-    bodyParser: { sizeLimit: "10mb" },
-  },
+  maxDuration: 300, // Vercel function max (5 min)
+  api: { bodyParser: { sizeLimit: "10mb" } },
 };
-
-const MODEL = "claude-sonnet-4-20250514";
-const PDF_MEDIA_TYPE = "application/pdf";
 
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
@@ -22,9 +16,13 @@ function stripDataUrlPrefix(fileContent) {
   return fileContent;
 }
 
-function isRetryable(err) {
+function isPdfFileName(name = "") {
+  return String(name).toLowerCase().endsWith(".pdf");
+}
+
+function isRetryableAnthropicError(err) {
   const status = err?.status || err?.response?.status;
-  const msg = String(err?.message || "").toLowerCase();
+  const msg = (err?.message || "").toLowerCase();
   return (
     status === 429 ||
     status === 529 ||
@@ -35,193 +33,219 @@ function isRetryable(err) {
   );
 }
 
-async function callWithBackoff(fn, label = "anthropic", maxAttempts = 7) {
+async function callWithBackoff(fn, label = "anthropic", maxAttempts = 6) {
   let attempt = 0;
-
   while (true) {
     try {
       return await fn();
     } catch (err) {
       attempt += 1;
-
       const status = err?.status || err?.response?.status;
       const msg = err?.message || String(err);
 
-      if (!isRetryable(err) || attempt >= maxAttempts) {
+      if (!isRetryableAnthropicError(err) || attempt >= maxAttempts) {
         console.error(`❌ ${label} failed (status ${status})`, msg);
         throw err;
       }
 
-      // exponential backoff + jitter
-      const base = 1200 * Math.pow(2, attempt - 1);
-      const jitter = Math.floor(Math.random() * 600);
-      const wait = Math.min(base + jitter, 25000);
+      const base = 1500 * Math.pow(2, attempt - 1);
+      const jitter = Math.floor(Math.random() * 500);
+      const wait = Math.min(base + jitter, 20000);
 
       console.warn(
-        `⚠️ ${label} retrying attempt ${attempt}/${maxAttempts} in ${wait}ms (status ${status})`
+        `⚠️ ${label} retrying (attempt ${attempt}/${maxAttempts}) in ${wait}ms | status=${status}`
       );
       await sleep(wait);
     }
   }
 }
 
-async function chunkPdfBase64(base64Pdf, chunkSizePages = 15) {
+function chunkSizeFor(documentType = "full") {
+  // Keep each chunk small enough to run comfortably under Vercel timeout.
+  // You can tune these.
+  const t = String(documentType).toLowerCase();
+  if (t.includes("proposal")) return 12; // proposals are smaller, but this keeps it snappy
+  return 15; // dissertations: safer on Vercel
+}
+
+function buildChunkPlan(totalPages, chunkSizePages) {
+  const chunks = [];
+  let chunkIndex = 0;
+  for (let start = 1; start <= totalPages; start += chunkSizePages) {
+    const end = Math.min(start + chunkSizePages - 1, totalPages);
+    chunkIndex += 1;
+    chunks.push({
+      index: chunkIndex,
+      startPage: start,
+      endPage: end,
+    });
+  }
+  return chunks;
+}
+
+async function extractPdfPagesBase64(base64Pdf, startPage, endPage) {
   const pdfBytes = Buffer.from(base64Pdf, "base64");
   const srcDoc = await PDFDocument.load(pdfBytes);
   const totalPages = srcDoc.getPageCount();
 
-  const chunks = [];
-  for (let start = 0; start < totalPages; start += chunkSizePages) {
-    const endExclusive = Math.min(start + chunkSizePages, totalPages);
+  const safeStart = Math.max(1, Math.min(startPage, totalPages));
+  const safeEnd = Math.max(safeStart, Math.min(endPage, totalPages));
 
-    const newDoc = await PDFDocument.create();
-    const pageIndices = Array.from(
-      { length: endExclusive - start },
-      (_, i) => start + i
-    );
+  const newDoc = await PDFDocument.create();
+  const pageIndices = [];
+  for (let p = safeStart; p <= safeEnd; p++) pageIndices.push(p - 1);
 
-    const copied = await newDoc.copyPages(srcDoc, pageIndices);
-    copied.forEach((p) => newDoc.addPage(p));
+  const copied = await newDoc.copyPages(srcDoc, pageIndices);
+  copied.forEach((p) => newDoc.addPage(p));
 
-    const chunkBytes = await newDoc.save();
-    const chunkB64 = Buffer.from(chunkBytes).toString("base64");
-
-    chunks.push({
-      startPage: start + 1,
-      endPage: endExclusive,
-      base64: chunkB64,
-    });
-  }
-
-  return { totalPages, chunks };
+  const chunkBytes = await newDoc.save();
+  return Buffer.from(chunkBytes).toString("base64");
 }
 
-/**
- * Keep the chunk prompt SHORT (reduces input tokens),
- * but very explicit about citations + evidence.
- */
-function chunkPrompt(documentType, startPage, endPage, totalPages) {
+function chunkPrompt({ documentType, startPage, endPage, totalPages }) {
   const mode = documentType || "full";
 
+  // NOTE: This prompt explicitly ALLOWS page citations (p. X),
+  // since you said you want page-numbered feedback.
   return `
-You are reviewing ONLY this chunk of a dissertation PDF.
+You are reviewing a dissertation/proposal in sections.
 
-CHUNK PAGE RANGE: ${startPage}-${endPage} (of ${totalPages} total pages)
+Section pages: ${startPage}-${endPage} of ${totalPages}.
+Mode: ${mode}.
 
-TASK:
-- Identify the most important issues AND strongest elements visible in this chunk.
-- Provide evidence-based feedback with citations using this chunk’s page numbering.
+Return ONLY chunk-level notes for this section that will be merged later.
 
-REQUIRED FORMAT (repeat as many times as needed):
-- Finding:
-- Evidence (short quote):
-- Citation: (p. X) or (pp. X–Y)  <-- MUST be within ${startPage}-${endPage}
-- Why it matters:
-- Recommendation (specific fix):
+Requirements:
+- Use concise, high-signal bullets.
+- If you reference a specific issue, include page citations like (p. X). Only cite pages within ${startPage}-${endPage}.
+- Prefer direct short quotes when helpful (keep quotes short).
+- Organize into:
+  1) Strengths (section-level)
+  2) Major Issues (must-fix)
+  3) Minor Issues
+  4) Actionable Fixes (specific edits / rewrites / what to add)
 
-Also include a short "Chunk Summary" (5–8 bullets) at the end.
+Important:
+- Do NOT produce a full document-wide review here.
+- Do NOT repeat the same bullet multiple times.
 `.trim();
 }
 
-/**
- * Final synthesis prompt: merges chunk notes into a committee-style report.
- * We explicitly require page citations to carry through.
- */
-function synthesisPrompt(documentType, totalPages) {
-  const mode = String(documentType || "full").toLowerCase();
-  const isProposal = mode.includes("proposal");
-
+function synthesisPrompt({ documentType }) {
+  const mode = documentType || "full";
   return `
-You are synthesizing multiple chunk-notes into ONE final HAIST© dissertation review.
+You will receive multiple chunk-level notes from a dissertation/proposal review.
 
-HARD REQUIREMENTS:
-- Preserve and use page citations from chunk notes.
-- Every major critique must include: comment + evidence quote + page citation + specific recommendation.
-- Prefer concise, professional committee language (no “chunking” talk).
+Task:
+1) Merge duplicates and contradictions.
+2) Produce a single cohesive HAIST-style review aligned to "${mode}".
+3) Keep page citations (p. X) when available. If a point appears in multiple chunks, keep the most relevant citation(s).
+4) Tone: professional, clean, committee-ready (minimalist academic).
 
-OUTPUT STRUCTURE:
-1) Title: HAIST© Dissertation Review Report
-2) Executive Summary (include top 3 “Defense Blockers” if any)
-3) Overall Assessment + Overall Rating (★★★★★ scale)
-4) Dimensional Analysis (${isProposal ? "7" : "10"} dimensions):
-   For each:
-   - Rating
-   - Strengths (bullets)
-   - Critical Issues (bullets with evidence + page citations)
-   - Recommendations (bullets, actionable)
-5) Action Plan (Prioritized checklist with “Immediate / Next 2 Weeks / Next Month”)
-6) Appendix: Evidence Highlights (optional; short, not bloated)
+Output format:
+- Title (one line)
+- Executive Summary (6–10 bullets, highest priority first)
+- Strengths (grouped)
+- Priority Revisions (Critical / High / Medium)
+- Chapter-by-Chapter Guidance (if possible)
+- “Quick Fix Checklist” (checkbox bullets)
+- “Defense/Submission Readiness” (1 short paragraph)
 
-Document length: detailed but readable; aim for professionalism over volume.
-Total pages in original document: ${totalPages}.
+Constraints:
+- Do not mention chunking, token limits, or API constraints.
+- Do not include implementation details about the system.
 `.trim();
 }
 
 export default async function handler(req, res) {
   // CORS
-  res.setHeader("Access-Control-Allow-Credentials", true);
+  res.setHeader("Access-Control-Allow-Credentials", "true");
   res.setHeader("Access-Control-Allow-Origin", "*");
-  res.setHeader(
-    "Access-Control-Allow-Methods",
-    "GET,OPTIONS,PATCH,DELETE,POST,PUT"
-  );
+  res.setHeader("Access-Control-Allow-Methods", "GET,OPTIONS,POST");
   res.setHeader(
     "Access-Control-Allow-Headers",
-    "X-CSRF-Token, X-Requested-With, Accept, Accept-Version, Content-Length, Content-MD5, Content-Type, Date, X-Api-Version"
+    "Content-Type, Authorization, X-Requested-With, Accept"
   );
 
   if (req.method === "OPTIONS") return res.status(200).end();
-  if (req.method !== "POST")
-    return res.status(405).json({ error: "Method not allowed" });
+  if (req.method !== "POST") return res.status(405).json({ error: "Method not allowed" });
 
   try {
-    const { fileContent, fileName, documentType } = req.body || {};
+    if (!process.env.ANTHROPIC_API_KEY) {
+      return res.status(500).json({ error: "API key not configured" });
+    }
+
+    const {
+      action = "plan",
+      fileContent,
+      fileName,
+      documentType = "full",
+      startPage,
+      endPage,
+      totalPages: totalPagesFromClient,
+      chunkNotes,
+    } = req.body || {};
 
     if (!fileContent || !fileName) {
       return res.status(400).json({ error: "Missing file content or name" });
     }
-
-    if (!process.env.ANTHROPIC_API_KEY) {
-      console.error("ANTHROPIC_API_KEY not set");
-      return res.status(500).json({ error: "API key not configured" });
+    if (!isPdfFileName(fileName)) {
+      return res.status(400).json({ error: "PDF only during beta" });
     }
-
-    const lower = String(fileName).toLowerCase();
-    const isPdf = lower.endsWith(".pdf");
-    if (!isPdf) {
-      return res.status(400).json({
-        error: "PDF only during beta",
-        message: "Please upload a PDF. Word (.docx) support can be added later.",
-      });
-    }
-
-    const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
 
     const base64Data = stripDataUrlPrefix(fileContent);
 
-    // Chunk smaller to reduce input-tokens-per-minute spikes
-    const { totalPages, chunks } = await chunkPdfBase64(base64Data, 15);
+    // ---------- ACTION: PLAN ----------
+    if (action === "plan") {
+      const pdfBytes = Buffer.from(base64Data, "base64");
+      const srcDoc = await PDFDocument.load(pdfBytes);
+      const totalPages = srcDoc.getPageCount();
 
-    console.log(`✅ PDF loaded: ${fileName} (${totalPages} pages)`);
-    console.log(`✅ Chunking into ${chunks.length} chunk(s)`);
+      const chunkSizePages = chunkSizeFor(documentType);
+      const chunks = buildChunkPlan(totalPages, chunkSizePages);
 
-    const perChunkNotes = [];
+      return res.status(200).json({
+        ok: true,
+        action: "plan",
+        fileName,
+        documentType,
+        totalPages,
+        chunkSizePages,
+        chunks,
+      });
+    }
 
-    // Process each chunk with throttle + retries
-    for (let i = 0; i < chunks.length; i++) {
-      const c = chunks[i];
-      const label = `chunk ${i + 1}/${chunks.length} pages ${c.startPage}-${c.endPage}`;
+    // ---------- ACTION: CHUNK ----------
+    if (action === "chunk") {
+      if (!startPage || !endPage) {
+        return res.status(400).json({ error: "Missing startPage/endPage for chunk action" });
+      }
 
-      console.log(`➡️ Processing ${label}`);
+      // Determine totalPages: accept from client if provided, else compute
+      let totalPages = Number(totalPagesFromClient);
+      if (!totalPages || !Number.isFinite(totalPages)) {
+        const pdfBytes = Buffer.from(base64Data, "base64");
+        const srcDoc = await PDFDocument.load(pdfBytes);
+        totalPages = srcDoc.getPageCount();
+      }
 
-      const prompt = chunkPrompt(documentType, c.startPage, c.endPage, totalPages);
+      const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
 
-      const chunkMessage = await callWithBackoff(
+      const chunkB64 = await extractPdfPagesBase64(base64Data, Number(startPage), Number(endPage));
+
+      const prompt = chunkPrompt({
+        documentType,
+        startPage: Number(startPage),
+        endPage: Number(endPage),
+        totalPages,
+      });
+
+      const msg = await callWithBackoff(
         () =>
           anthropic.messages.create({
-            model: MODEL,
-            max_tokens: 2200, // moderate, keeps responses consistent
-            temperature: 0.25,
+            model: "claude-sonnet-4-20250514",
+            max_tokens: 1800, // keep responses tight per chunk (faster & cheaper)
+            temperature: 0.3,
             system: HAIST_SYSTEM_PROMPT,
             messages: [
               {
@@ -231,8 +255,8 @@ export default async function handler(req, res) {
                     type: "document",
                     source: {
                       type: "base64",
-                      media_type: PDF_MEDIA_TYPE,
-                      data: c.base64,
+                      media_type: "application/pdf",
+                      data: chunkB64,
                     },
                   },
                   { type: "text", text: prompt },
@@ -240,93 +264,83 @@ export default async function handler(req, res) {
               },
             ],
           }),
-        label
+        `chunk ${startPage}-${endPage}`
       );
 
-      const chunkText = (chunkMessage.content || [])
+      const chunkText = (msg.content || [])
         .filter((b) => b.type === "text")
         .map((b) => b.text)
         .join("\n\n")
         .trim();
 
-      perChunkNotes.push(
-        `## Notes for pages ${c.startPage}-${c.endPage}\n${chunkText}`
+      return res.status(200).json({
+        ok: true,
+        action: "chunk",
+        startPage: Number(startPage),
+        endPage: Number(endPage),
+        notes: chunkText,
+      });
+    }
+
+    // ---------- ACTION: FINAL ----------
+    if (action === "final") {
+      if (!Array.isArray(chunkNotes) || chunkNotes.length === 0) {
+        return res.status(400).json({ error: "Missing chunkNotes[] for final action" });
+      }
+
+      const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
+
+      const synth = await callWithBackoff(
+        () =>
+          anthropic.messages.create({
+            model: "claude-sonnet-4-20250514",
+            max_tokens: 3500,
+            temperature: 0.25,
+            system: HAIST_SYSTEM_PROMPT,
+            messages: [
+              { role: "user", content: [{ type: "text", text: synthesisPrompt({ documentType }) }] },
+              {
+                role: "user",
+                content: [
+                  {
+                    type: "text",
+                    text:
+                      "Here are the chunk notes to merge:\n\n" +
+                      chunkNotes.map((t, i) => `--- CHUNK ${i + 1} ---\n${t}`).join("\n\n"),
+                  },
+                ],
+              },
+            ],
+          }),
+        "final synthesis"
       );
 
-      // Pace calls to reduce 429/529 + org token/min spikes
-      await sleep(4500);
-    }
+      const finalText = (synth.content || [])
+        .filter((b) => b.type === "text")
+        .map((b) => b.text)
+        .join("\n\n")
+        .trim();
 
-    console.log("🧠 Synthesizing final review from chunk notes...");
-
-    const finalPrompt = synthesisPrompt(documentType, totalPages);
-
-    const synthesis = await callWithBackoff(
-      () =>
-        anthropic.messages.create({
-          model: MODEL,
-          max_tokens: 6000, // allow a fuller final report
-          temperature: 0.2,
-          system: HAIST_SYSTEM_PROMPT,
-          messages: [
-            {
-              role: "user",
-              content: [
-                { type: "text", text: finalPrompt },
-                { type: "text", text: "REFERENCE: HAIST rubric + required format:" },
-                { type: "text", text: getHAISTPrompt(documentType || "full") },
-                { type: "text", text: "CHUNK NOTES (use these; preserve citations):" },
-                { type: "text", text: perChunkNotes.join("\n\n") },
-              ],
-            },
-          ],
-        }),
-      "synthesis"
-    );
-
-    const reviewText = (synthesis.content || [])
-      .filter((b) => b.type === "text")
-      .map((b) => b.text)
-      .join("\n\n")
-      .trim();
-
-    return res.status(200).json({
-      success: true,
-      review: reviewText,
-      metadata: {
-        fileName,
-        documentType,
-        totalPages,
-        chunks: chunks.length,
-        model: MODEL,
-      },
-    });
-  } catch (error) {
-    const status = error?.status || error?.response?.status;
-    const msg = error?.message || String(error);
-
-    console.error("❌ Error processing review:", status, msg);
-
-    if (String(status) === "429" || msg.toLowerCase().includes("rate_limit")) {
-      return res.status(429).json({
-        error: "rate_limit",
-        message:
-          "The AI service rate limit was reached. Please wait about 60 seconds and try again.",
+      return res.status(200).json({
+        ok: true,
+        action: "final",
+        review: finalText,
       });
     }
 
-    if (String(status) === "529" || msg.toLowerCase().includes("overloaded")) {
-      return res.status(529).json({
-        error: "overloaded",
-        message:
-          "The AI service is temporarily overloaded. Please wait about 60 seconds and try again.",
-      });
-    }
+    return res.status(400).json({ error: `Unknown action: ${action}` });
+  } catch (err) {
+    const status = err?.status || err?.response?.status;
+    const message = err?.message || String(err);
 
-    return res.status(500).json({
-      error: "Failed to process review",
-      message: msg,
-      details: process.env.NODE_ENV === "development" ? error?.stack : undefined,
+    // Let the UI show a clean message, but keep details in logs
+    console.error("process-review error:", status, message);
+
+    // If Anthropic returns a structured JSON-ish message, pass it through safely
+    return res.status(status || 500).json({
+      error: "Request failed",
+      status: status || 500,
+      message,
     });
   }
 }

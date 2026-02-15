@@ -76,7 +76,7 @@ export default function HomePage() {
     setError("");
   };
 
-  const runChunkedReview = async () => {
+  const runReview = async () => {
     if (!selectedFile) {
       setError("Please upload a PDF first.");
       return;
@@ -98,91 +98,36 @@ export default function HomePage() {
       // Step 1: Read file
       setCurrentStep("Reading document...");
       const fileContent = await fileToBase64(selectedFile);
-      setProgress(10);
-
-      // Step 2: Get chunk plan
-      setCurrentStep("Planning analysis...");
-      const planRes = await fetch("/api/process-review", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          action: "plan",
-          fileContent,
-          fileName: selectedFile.name,
-          documentType,
-        }),
-      });
-
-      if (!planRes.ok) {
-        throw new Error(`Planning failed: ${planRes.status}`);
-      }
-
-      const plan = await planRes.json();
-      const { chunks, totalPages } = plan;
       setProgress(15);
 
-      // Step 3: Process each chunk
-      const chunkNotes = [];
-      const progressPerChunk = 60 / chunks.length;
-
-      for (let i = 0; i < chunks.length; i++) {
-        const chunk = chunks[i];
-        setCurrentStep(`Analyzing pages ${chunk.startPage}-${chunk.endPage}...`);
-
-        const chunkRes = await fetch("/api/process-review", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            action: "chunk",
-            fileContent,
-            fileName: selectedFile.name,
-            documentType,
-            startPage: chunk.startPage,
-            endPage: chunk.endPage,
-            totalPages,
-          }),
-        });
-
-        if (!chunkRes.ok) {
-          throw new Error(`Chunk ${i + 1} failed: ${chunkRes.status}`);
-        }
-
-        const chunkData = await chunkRes.json();
-        chunkNotes.push(chunkData.notes);
-        setProgress(15 + (i + 1) * progressPerChunk);
-      }
-
-      // Step 4: Synthesize final review
-      setCurrentStep("Synthesizing final review...");
-      setProgress(80);
-
-      const finalRes = await fetch("/api/process-review", {
+      // Step 2: Process review (API handles chunking internally)
+      setCurrentStep("Running HAIST© review...");
+      const reviewRes = await fetch("/api/process-review", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          action: "final",
           fileContent,
           fileName: selectedFile.name,
           documentType,
-          chunkNotes,
         }),
       });
 
-      if (!finalRes.ok) {
-        throw new Error(`Synthesis failed: ${finalRes.status}`);
+      if (!reviewRes.ok) {
+        const errorData = await reviewRes.json().catch(() => ({}));
+        throw new Error(errorData.message || `Review failed: ${reviewRes.status}`);
       }
 
-      const finalData = await finalRes.json();
-      setReviewText(finalData.review);
-      setProgress(85);
+      const reviewData = await reviewRes.json();
+      setReviewText(reviewData.review);
+      setProgress(75);
 
-      // Step 5: Generate Word document
+      // Step 3: Generate Word document
       setCurrentStep("Generating Word document...");
       const docxRes = await fetch("/api/generate-docx", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          reviewText: finalData.review,
+          reviewText: reviewData.review,
           studentName: "",
           documentType: documentType === "proposal" ? "Dissertation Proposal" : "Full Dissertation",
           fileName: selectedFile.name,
@@ -193,13 +138,12 @@ export default function HomePage() {
         const docxData = await docxRes.json();
         setDocxBase64(docxData.docxBase64);
       }
-      setProgress(95);
+      setProgress(90);
 
-      // Step 6: Send email if Full Review
+      // Step 4: Send email if Full Review
       if (reviewType === "full" && userEmail.trim()) {
         setCurrentStep("Sending email notification...");
-        // Note: Email sending would be done server-side with the Word doc
-        // For now, we'll skip this in the client
+        // TODO: Implement server-side email sending
       }
 
       setProgress(100);
@@ -385,7 +329,7 @@ export default function HomePage() {
 
           {/* Submit Button */}
           <button
-            onClick={runChunkedReview}
+            onClick={runReview}
             disabled={!canSubmit}
             className={`btn btnPrimary ${!canSubmit ? "btnDisabled" : ""}`}
           >

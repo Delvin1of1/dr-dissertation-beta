@@ -61,11 +61,11 @@ async function callWithBackoff(fn, label = "anthropic", maxAttempts = 6) {
 }
 
 function chunkSizeFor(documentType = "full") {
-  // Use very small chunks to stay under 30k tokens/min rate limit
-  // Each page is ~1000-1500 tokens, so 10 pages = ~10-15k tokens per request
+  // With prompt caching, we can use larger chunks since cached content doesn't count toward rate limit
+  // First chunk pays full cost, subsequent chunks get 90% discount
   const t = String(documentType).toLowerCase();
-  if (t.includes("proposal")) return 10;
-  return 10; // Small chunks to respect tight rate limits
+  if (t.includes("proposal")) return 15;
+  return 15; // Larger chunks now that we have caching
 }
 
 function buildChunkPlan(totalPages, chunkSizePages) {

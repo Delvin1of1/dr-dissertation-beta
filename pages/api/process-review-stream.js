@@ -57,11 +57,11 @@ async function callWithBackoff(fn, label = "anthropic", maxAttempts = 6) {
 }
 
 function chunkSizeFor(documentType = "full") {
-  // Use very small chunks to stay under 30k tokens/min rate limit
-  // Each page is ~1000-1500 tokens, so 10 pages = ~10-15k tokens per request
+  // With prompt caching, we can use larger chunks since cached content doesn't count toward rate limit
+  // First chunk pays full cost, subsequent chunks get 90% discount
   const t = String(documentType).toLowerCase();
-  if (t.includes("proposal")) return 10;
-  return 10; // Small chunks to respect tight rate limits
+  if (t.includes("proposal")) return 15;
+  return 15; // Larger chunks now that we have caching
 }
 
 function buildChunkPlan(totalPages, chunkSizePages) {
@@ -261,6 +261,8 @@ export default async function handler(req, res) {
       percent: 75,
     });
 
+    console.log(`🔄 Starting synthesis with ${allChunkNotes.length} chunks`);
+
     // 3. Synthesize final review
     const synthMaxTokens = reviewType === "quicklook" ? 2000 : 3500;
 
@@ -301,6 +303,12 @@ export default async function handler(req, res) {
       .join("\n\n")
       .trim();
 
+    console.log(`✅ Synthesis complete! Review length: ${finalText.length} characters`);
+
+    if (!finalText || finalText.length === 0) {
+      throw new Error("Synthesis produced empty review");
+    }
+
     sendEvent({
       type: "complete",
       review: finalText,
@@ -309,11 +317,17 @@ export default async function handler(req, res) {
       percent: 100,
     });
 
+    console.log(`📤 Sent completion event to client`);
     res.end();
   } catch (err) {
+    const status = err?.status || err?.response?.status;
     const message = err?.message || String(err);
-    console.error("process-review-stream error:", message);
-    sendEvent({ type: "error", message });
+    console.error("process-review-stream error:", { status, message, stack: err?.stack });
+
+    sendEvent({
+      type: "error",
+      message: `Error: ${message}${status ? ` (Status: ${status})` : ''}`
+    });
     res.end();
   }
 }

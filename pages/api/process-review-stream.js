@@ -208,7 +208,13 @@ export default async function handler(req, res) {
             model: "claude-sonnet-4-20250514",
             max_tokens: maxTokens,
             temperature: 0.3,
-            system: HAIST_SYSTEM_PROMPT,
+            system: [
+              {
+                type: "text",
+                text: HAIST_SYSTEM_PROMPT,
+                cache_control: { type: "ephemeral" }
+              }
+            ],
             messages: [
               {
                 role: "user",
@@ -220,6 +226,7 @@ export default async function handler(req, res) {
                       media_type: "application/pdf",
                       data: chunkB64,
                     },
+                    cache_control: { type: "ephemeral" }
                   },
                   { type: "text", text: prompt },
                 ],
@@ -263,7 +270,13 @@ export default async function handler(req, res) {
           model: "claude-sonnet-4-20250514",
           max_tokens: synthMaxTokens,
           temperature: 0.25,
-          system: HAIST_SYSTEM_PROMPT,
+          system: [
+            {
+              type: "text",
+              text: HAIST_SYSTEM_PROMPT,
+              cache_control: { type: "ephemeral" }
+            }
+          ],
           messages: [
             { role: "user", content: [{ type: "text", text: synthesisPrompt({ documentType, reviewType }) }] },
             {

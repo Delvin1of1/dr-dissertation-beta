@@ -250,6 +250,11 @@ export default async function handler(req, res) {
 
       const batchResults = await Promise.all(batchPromises);
       allChunkNotes.push(...batchResults);
+
+      // Add delay between batches to respect rate limits (except for last batch)
+      if (i + BATCH_SIZE < chunks.length) {
+        await sleep(15000); // Wait 15 seconds between batches
+      }
     }
 
     sendEvent({

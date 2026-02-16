@@ -14,8 +14,8 @@ export default function FileUpload({ onFileSelect }) {
       return false;
     }
 
-    if (file.size > 10 * 1024 * 1024) {
-      alert("File size must be less than 10MB");
+    if (file.size > 50 * 1024 * 1024) {
+      alert("File size must be less than 50MB");
       return false;
     }
 
@@ -112,7 +112,7 @@ export default function FileUpload({ onFileSelect }) {
               <p className="prompt-main">
                 Drag dissertation here or click to browse
               </p>
-              <p className="prompt-sub">PDF only • Max 10MB</p>
+              <p className="prompt-sub">PDF only • Max 50MB • Full dissertations welcome</p>
             </div>
           )}
         </label>

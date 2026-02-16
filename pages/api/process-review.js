@@ -5,7 +5,7 @@ import { HAIST_SYSTEM_PROMPT, getQuickLookPrompt, getFullReviewPrompt } from "./
 
 export const config = {
   maxDuration: 300, // Vercel function max (5 min)
-  api: { bodyParser: { sizeLimit: "10mb" } },
+  api: { bodyParser: { sizeLimit: "50mb" } }, // Support full dissertations (100-300 pages)
 };
 
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));

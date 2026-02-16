@@ -61,11 +61,11 @@ async function callWithBackoff(fn, label = "anthropic", maxAttempts = 6) {
 }
 
 function chunkSizeFor(documentType = "full") {
-  // Larger chunks = fewer API calls = faster processing
-  // With parallel processing, we can handle bigger chunks efficiently
+  // Use very small chunks to stay under 30k tokens/min rate limit
+  // Each page is ~1000-1500 tokens, so 10 pages = ~10-15k tokens per request
   const t = String(documentType).toLowerCase();
-  if (t.includes("proposal")) return 20; // proposals are smaller
-  return 25; // dissertations: larger chunks for speed
+  if (t.includes("proposal")) return 10;
+  return 10; // Small chunks to respect tight rate limits
 }
 
 function buildChunkPlan(totalPages, chunkSizePages) {

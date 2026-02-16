@@ -57,9 +57,11 @@ async function callWithBackoff(fn, label = "anthropic", maxAttempts = 6) {
 }
 
 function chunkSizeFor(documentType = "full") {
+  // Use very small chunks to stay under 30k tokens/min rate limit
+  // Each page is ~1000-1500 tokens, so 10 pages = ~10-15k tokens per request
   const t = String(documentType).toLowerCase();
-  if (t.includes("proposal")) return 20;
-  return 25;
+  if (t.includes("proposal")) return 10;
+  return 10; // Small chunks to respect tight rate limits
 }
 
 function buildChunkPlan(totalPages, chunkSizePages) {

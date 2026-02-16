@@ -61,11 +61,11 @@ async function callWithBackoff(fn, label = "anthropic", maxAttempts = 6) {
 }
 
 function chunkSizeFor(documentType = "full") {
-  // Keep each chunk small enough to run comfortably under Vercel timeout.
-  // You can tune these.
+  // Larger chunks = fewer API calls = faster processing
+  // With parallel processing, we can handle bigger chunks efficiently
   const t = String(documentType).toLowerCase();
-  if (t.includes("proposal")) return 12; // proposals are smaller, but this keeps it snappy
-  return 15; // dissertations: safer on Vercel
+  if (t.includes("proposal")) return 20; // proposals are smaller
+  return 25; // dissertations: larger chunks for speed
 }
 
 function buildChunkPlan(totalPages, chunkSizePages) {
@@ -193,12 +193,10 @@ export default async function handler(req, res) {
 
       console.log(`📄 Document: ${totalPages} pages → ${chunks.length} chunks of ${chunkSizePages} pages`);
 
-      // 2. Process each chunk
-      const allChunkNotes = [];
-      for (let i = 0; i < chunks.length; i++) {
-        const chunk = chunks[i];
-        console.log(`📝 Processing chunk ${i + 1}/${chunks.length} (pages ${chunk.startPage}-${chunk.endPage})`);
+      // 2. Process chunks in parallel (much faster!)
+      console.log(`🚀 Processing all chunks in parallel...`);
 
+      const chunkPromises = chunks.map(async (chunk, i) => {
         const chunkB64 = await extractPdfPagesBase64(base64Data, chunk.startPage, chunk.endPage);
         const prompt = chunkPrompt({
           documentType,
@@ -207,11 +205,14 @@ export default async function handler(req, res) {
           totalPages,
         });
 
+        // Reduce max_tokens for QuickLook to speed up processing
+        const maxTokens = reviewType === "quicklook" ? 1200 : 1800;
+
         const msg = await callWithBackoff(
           () =>
             anthropic.messages.create({
               model: "claude-sonnet-4-20250514",
-              max_tokens: 1800,
+              max_tokens: maxTokens,
               temperature: 0.3,
               system: HAIST_SYSTEM_PROMPT,
               messages: [
@@ -240,17 +241,23 @@ export default async function handler(req, res) {
           .join("\n\n")
           .trim();
 
-        allChunkNotes.push(chunkText);
-      }
+        console.log(`✓ Chunk ${i + 1}/${chunks.length} complete (pages ${chunk.startPage}-${chunk.endPage})`);
+        return chunkText;
+      });
+
+      const allChunkNotes = await Promise.all(chunkPromises);
 
       console.log(`✅ All chunks processed, synthesizing final review (${reviewType})`);
 
       // 3. Synthesize final review
+      // Reduce max_tokens for QuickLook (shorter output requirement)
+      const synthMaxTokens = reviewType === "quicklook" ? 2000 : 3500;
+
       const synth = await callWithBackoff(
         () =>
           anthropic.messages.create({
             model: "claude-sonnet-4-20250514",
-            max_tokens: 3500,
+            max_tokens: synthMaxTokens,
             temperature: 0.25,
             system: HAIST_SYSTEM_PROMPT,
             messages: [

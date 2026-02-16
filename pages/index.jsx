@@ -149,8 +149,12 @@ export default function HomePage() {
         }
       }
 
-      if (!reviewResult || !reviewResult.review) {
-        throw new Error("No review generated");
+      if (!reviewResult) {
+        throw new Error("Review stream ended without completion event");
+      }
+
+      if (!reviewResult.review || reviewResult.review.trim() === "") {
+        throw new Error("No review text generated");
       }
 
       setCurrentStep("Generating Word document...");
@@ -158,7 +162,7 @@ export default function HomePage() {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          reviewText: reviewData.review,
+          reviewText: reviewResult.review,
           studentName: "",
           documentType: documentType === "proposal" ? "Dissertation Proposal" : "Full Dissertation",
           fileName: selectedFile.name,

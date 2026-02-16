@@ -158,7 +158,7 @@ export default async function handler(req, res) {
     }
 
     const {
-      action = "plan",
+      action,
       fileContent,
       fileName,
       documentType = "full",
@@ -177,6 +177,115 @@ export default async function handler(req, res) {
     }
 
     const base64Data = stripDataUrlPrefix(fileContent);
+
+    // If no action specified, run complete single-call workflow
+    if (!action) {
+      console.log(`🔄 Starting complete review workflow for ${fileName} (${reviewType})`);
+
+      const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
+
+      // 1. Get total pages and plan chunks
+      const pdfBytes = Buffer.from(base64Data, "base64");
+      const srcDoc = await PDFDocument.load(pdfBytes);
+      const totalPages = srcDoc.getPageCount();
+      const chunkSizePages = chunkSizeFor(documentType);
+      const chunks = buildChunkPlan(totalPages, chunkSizePages);
+
+      console.log(`📄 Document: ${totalPages} pages → ${chunks.length} chunks of ${chunkSizePages} pages`);
+
+      // 2. Process each chunk
+      const allChunkNotes = [];
+      for (let i = 0; i < chunks.length; i++) {
+        const chunk = chunks[i];
+        console.log(`📝 Processing chunk ${i + 1}/${chunks.length} (pages ${chunk.startPage}-${chunk.endPage})`);
+
+        const chunkB64 = await extractPdfPagesBase64(base64Data, chunk.startPage, chunk.endPage);
+        const prompt = chunkPrompt({
+          documentType,
+          startPage: chunk.startPage,
+          endPage: chunk.endPage,
+          totalPages,
+        });
+
+        const msg = await callWithBackoff(
+          () =>
+            anthropic.messages.create({
+              model: "claude-sonnet-4-20250514",
+              max_tokens: 1800,
+              temperature: 0.3,
+              system: HAIST_SYSTEM_PROMPT,
+              messages: [
+                {
+                  role: "user",
+                  content: [
+                    {
+                      type: "document",
+                      source: {
+                        type: "base64",
+                        media_type: "application/pdf",
+                        data: chunkB64,
+                      },
+                    },
+                    { type: "text", text: prompt },
+                  ],
+                },
+              ],
+            }),
+          `chunk ${chunk.startPage}-${chunk.endPage}`
+        );
+
+        const chunkText = (msg.content || [])
+          .filter((b) => b.type === "text")
+          .map((b) => b.text)
+          .join("\n\n")
+          .trim();
+
+        allChunkNotes.push(chunkText);
+      }
+
+      console.log(`✅ All chunks processed, synthesizing final review (${reviewType})`);
+
+      // 3. Synthesize final review
+      const synth = await callWithBackoff(
+        () =>
+          anthropic.messages.create({
+            model: "claude-sonnet-4-20250514",
+            max_tokens: 3500,
+            temperature: 0.25,
+            system: HAIST_SYSTEM_PROMPT,
+            messages: [
+              { role: "user", content: [{ type: "text", text: synthesisPrompt({ documentType, reviewType }) }] },
+              {
+                role: "user",
+                content: [
+                  {
+                    type: "text",
+                    text:
+                      "Here are the chunk notes to merge:\n\n" +
+                      allChunkNotes.map((t, i) => `--- CHUNK ${i + 1} ---\n${t}`).join("\n\n"),
+                  },
+                ],
+              },
+            ],
+          }),
+        "final synthesis"
+      );
+
+      const finalText = (synth.content || [])
+        .filter((b) => b.type === "text")
+        .map((b) => b.text)
+        .join("\n\n")
+        .trim();
+
+      console.log(`🎉 Review complete! Length: ${finalText.length} characters`);
+
+      return res.status(200).json({
+        ok: true,
+        review: finalText,
+        totalPages,
+        chunksProcessed: chunks.length,
+      });
+    }
 
     // ---------- ACTION: PLAN ----------
     if (action === "plan") {

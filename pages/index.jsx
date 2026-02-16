@@ -51,6 +51,7 @@ export default function HomePage() {
   const [progress, setProgress] = useState(0);
   const [currentStep, setCurrentStep] = useState("");
   const [error, setError] = useState("");
+  const [chunkProgress, setChunkProgress] = useState({ completed: 0, total: 0 });
 
   // Results
   const [reviewText, setReviewText] = useState("");
@@ -92,32 +93,65 @@ export default function HomePage() {
     setReviewText("");
     setDocxBase64("");
     setProgress(5);
+    setChunkProgress({ completed: 0, total: 0 });
 
     try {
       setCurrentStep("Reading document...");
       const fileContent = await fileToBase64(selectedFile);
-      setProgress(15);
+      setProgress(10);
 
-      setCurrentStep("Running HAIST© review...");
-      const reviewRes = await fetch("/api/process-review", {
+      // Use streaming endpoint for real-time progress
+      setCurrentStep("Connecting to review service...");
+      const response = await fetch("/api/process-review-stream", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           fileContent,
           fileName: selectedFile.name,
           documentType,
-          reviewType, // Pass QuickLook vs Full Review type
+          reviewType,
         }),
       });
 
-      if (!reviewRes.ok) {
-        const errorData = await reviewRes.json().catch(() => ({}));
-        throw new Error(errorData.message || `Review failed: ${reviewRes.status}`);
+      if (!response.ok) {
+        throw new Error(`Review failed: ${response.status}`);
       }
 
-      const reviewData = await reviewRes.json();
-      setReviewText(reviewData.review);
-      setProgress(75);
+      const reader = response.body.getReader();
+      const decoder = new TextDecoder();
+      let reviewResult = null;
+
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+
+        const chunk = decoder.decode(value);
+        const lines = chunk.split("\n");
+
+        for (const line of lines) {
+          if (line.startsWith("data: ")) {
+            const data = JSON.parse(line.slice(6));
+
+            if (data.type === "progress") {
+              setCurrentStep(data.step);
+              setProgress(data.percent);
+              if (data.completedChunks !== undefined && data.totalChunks !== undefined) {
+                setChunkProgress({ completed: data.completedChunks, total: data.totalChunks });
+              }
+            } else if (data.type === "complete") {
+              reviewResult = data;
+              setReviewText(data.review);
+              setProgress(75);
+            } else if (data.type === "error") {
+              throw new Error(data.message);
+            }
+          }
+        }
+      }
+
+      if (!reviewResult || !reviewResult.review) {
+        throw new Error("No review generated");
+      }
 
       setCurrentStep("Generating Word document...");
       const docxRes = await fetch("/api/generate-docx", {
@@ -325,6 +359,11 @@ export default function HomePage() {
           {isProcessing && (
             <div className="progress-section">
               <div className="progress-label">{currentStep}</div>
+              {chunkProgress.total > 0 && (
+                <div className="chunk-progress">
+                  Processing sections: {chunkProgress.completed} / {chunkProgress.total}
+                </div>
+              )}
               <div className="progress-bar">
                 <div className="progress-fill" style={{ width: pct }} />
               </div>
@@ -724,10 +763,22 @@ export default function HomePage() {
         }
 
         .progress-label {
-          margin-bottom: 0.75rem;
+          margin-bottom: 0.5rem;
           font-size: 0.9375rem;
           color: #475569;
           font-weight: 500;
+        }
+
+        .chunk-progress {
+          margin-bottom: 0.5rem;
+          padding: 0.5rem 1rem;
+          background: linear-gradient(135deg, rgba(99, 102, 241, 0.1), rgba(139, 92, 246, 0.1));
+          border-left: 3px solid #6366F1;
+          border-radius: 6px;
+          font-size: 0.875rem;
+          color: #6366F1;
+          font-weight: 600;
+          font-family: 'SF Mono', 'Monaco', 'Courier New', monospace;
         }
 
         .progress-bar {

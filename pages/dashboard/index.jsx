@@ -9,6 +9,12 @@ export default function Dashboard() {
   const [profile, setProfile] = useState(null);
   const [loading, setLoading] = useState(true);
 
+  // Promo code state
+  const [promoCode, setPromoCode] = useState('');
+  const [promoLoading, setPromoLoading] = useState(false);
+  const [promoMessage, setPromoMessage] = useState('');
+  const [promoError, setPromoError] = useState('');
+
   useEffect(() => {
     loadUserData();
   }, []);
@@ -31,6 +37,66 @@ export default function Dashboard() {
   async function handleSignOut() {
     await signOut();
     router.push('/auth/login');
+  }
+
+  async function handleRedeemPromo() {
+    if (!promoCode.trim()) {
+      setPromoError('Please enter a promo code');
+      return;
+    }
+
+    setPromoLoading(true);
+    setPromoError('');
+    setPromoMessage('');
+
+    try {
+      // Validate the code
+      const validateRes = await fetch('/api/promo/validate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ code: promoCode, userId: user.id }),
+      });
+
+      const validateData = await validateRes.json();
+
+      if (!validateRes.ok) {
+        setPromoError(validateData.error || 'Invalid promo code');
+        setPromoLoading(false);
+        return;
+      }
+
+      // Redeem the code
+      const redeemRes = await fetch('/api/promo/redeem', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ promoCodeId: validateData.promoCodeId, userId: user.id }),
+      });
+
+      const redeemData = await redeemRes.json();
+
+      if (!redeemRes.ok) {
+        setPromoError(redeemData.error || 'Failed to redeem code');
+        setPromoLoading(false);
+        return;
+      }
+
+      // Success!
+      setPromoMessage(
+        `Success! Added ${redeemData.credits_granted.quicklooks} QuickLook${
+          redeemData.credits_granted.quicklooks !== 1 ? 's' : ''
+        } and ${redeemData.credits_granted.full_reviews} Full Review${
+          redeemData.credits_granted.full_reviews !== 1 ? 's' : ''
+        }!`
+      );
+      setPromoCode('');
+
+      // Reload profile to show new credits
+      await loadUserData();
+    } catch (error) {
+      setPromoError('An error occurred. Please try again.');
+    } finally {
+      setPromoLoading(false);
+    }
   }
 
   if (loading) {
@@ -75,7 +141,34 @@ export default function Dashboard() {
               <div className="credit-value">{profile?.credits_full_review || 0}</div>
             </div>
           </div>
-          <p className="credit-note">You don't have any credits yet. Purchase credits to start using reviews.</p>
+          <p className="credit-note">You don't have any credits yet. Purchase credits or use a promo code below.</p>
+        </div>
+
+        <div className="card">
+          <h3>Have a Promo Code?</h3>
+          <p style={{ marginBottom: '1rem', color: '#718096' }}>
+            Enter your beta code or promo code to get free credits
+          </p>
+          <div className="promo-input-group">
+            <input
+              type="text"
+              value={promoCode}
+              onChange={(e) => setPromoCode(e.target.value.toUpperCase())}
+              placeholder="Enter code (e.g., BETA001)"
+              disabled={promoLoading}
+              className="promo-input"
+              onKeyPress={(e) => e.key === 'Enter' && handleRedeemPromo()}
+            />
+            <button
+              onClick={handleRedeemPromo}
+              disabled={promoLoading || !promoCode.trim()}
+              className="btn-redeem"
+            >
+              {promoLoading ? 'Redeeming...' : 'Redeem'}
+            </button>
+          </div>
+          {promoError && <div className="promo-error">{promoError}</div>}
+          {promoMessage && <div className="promo-success">{promoMessage}</div>}
         </div>
 
         <div className="card">
@@ -297,5 +390,76 @@ const styles = `
 
   .next-steps li:last-child {
     border-bottom: none;
+  }
+
+  .promo-input-group {
+    display: flex;
+    gap: 0.75rem;
+  }
+
+  .promo-input {
+    flex: 1;
+    padding: 0.75rem 1rem;
+    border: 2px solid #e2e8f0;
+    border-radius: 8px;
+    font-size: 1rem;
+    font-family: monospace;
+    text-transform: uppercase;
+    transition: all 0.2s;
+  }
+
+  .promo-input:focus {
+    outline: none;
+    border-color: #667eea;
+    box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+  }
+
+  .promo-input:disabled {
+    background: #f7fafc;
+    cursor: not-allowed;
+  }
+
+  .btn-redeem {
+    padding: 0.75rem 2rem;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    border: none;
+    border-radius: 8px;
+    font-size: 1rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+    white-space: nowrap;
+  }
+
+  .btn-redeem:hover:not(:disabled) {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+  }
+
+  .btn-redeem:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+  }
+
+  .promo-error {
+    margin-top: 1rem;
+    padding: 0.75rem 1rem;
+    background: #fff5f5;
+    border-left: 3px solid #f56565;
+    border-radius: 4px;
+    color: #c53030;
+    font-size: 0.875rem;
+  }
+
+  .promo-success {
+    margin-top: 1rem;
+    padding: 0.75rem 1rem;
+    background: #f0fff4;
+    border-left: 3px solid #48bb78;
+    border-radius: 4px;
+    color: #22543d;
+    font-size: 0.875rem;
+    font-weight: 600;
   }
 `;

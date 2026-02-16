@@ -193,75 +193,62 @@ export default async function handler(req, res) {
 
       console.log(`📄 Document: ${totalPages} pages → ${chunks.length} chunks of ${chunkSizePages} pages`);
 
-      // 2. Process chunks in batches to respect rate limits (30k tokens/min)
-      // Process 2 chunks at a time to stay under Anthropic rate limit
-      console.log(`🚀 Processing chunks in batches of 2...`);
+      // 2. Process chunks sequentially to respect rate limits (30k tokens/min)
+      // Sequential processing prevents rate limit errors
+      console.log(`🚀 Processing chunks sequentially...`);
 
-      const BATCH_SIZE = 2;
       const allChunkNotes = [];
 
-      for (let i = 0; i < chunks.length; i += BATCH_SIZE) {
-        const batch = chunks.slice(i, i + BATCH_SIZE);
-        console.log(`📦 Processing batch ${Math.floor(i / BATCH_SIZE) + 1}/${Math.ceil(chunks.length / BATCH_SIZE)}`);
+      for (let i = 0; i < chunks.length; i++) {
+        const chunk = chunks[i];
+        console.log(`📝 Processing chunk ${i + 1}/${chunks.length} (pages ${chunk.startPage}-${chunk.endPage})`);
 
-        const batchPromises = batch.map(async (chunk, batchIndex) => {
-          const chunkB64 = await extractPdfPagesBase64(base64Data, chunk.startPage, chunk.endPage);
-          const prompt = chunkPrompt({
-            documentType,
-            startPage: chunk.startPage,
-            endPage: chunk.endPage,
-            totalPages,
-          });
-
-          // Reduce max_tokens for QuickLook to speed up processing
-          const maxTokens = reviewType === "quicklook" ? 1200 : 1800;
-
-          const msg = await callWithBackoff(
-            () =>
-              anthropic.messages.create({
-                model: "claude-sonnet-4-20250514",
-                max_tokens: maxTokens,
-                temperature: 0.3,
-                system: HAIST_SYSTEM_PROMPT,
-                messages: [
-                  {
-                    role: "user",
-                    content: [
-                      {
-                        type: "document",
-                        source: {
-                          type: "base64",
-                          media_type: "application/pdf",
-                          data: chunkB64,
-                        },
-                      },
-                      { type: "text", text: prompt },
-                    ],
-                  },
-                ],
-              }),
-            `chunk ${chunk.startPage}-${chunk.endPage}`
-          );
-
-          const chunkText = (msg.content || [])
-            .filter((b) => b.type === "text")
-            .map((b) => b.text)
-            .join("\n\n")
-            .trim();
-
-          const globalIndex = i + batchIndex + 1;
-          console.log(`✓ Chunk ${globalIndex}/${chunks.length} complete (pages ${chunk.startPage}-${chunk.endPage})`);
-          return chunkText;
+        const chunkB64 = await extractPdfPagesBase64(base64Data, chunk.startPage, chunk.endPage);
+        const prompt = chunkPrompt({
+          documentType,
+          startPage: chunk.startPage,
+          endPage: chunk.endPage,
+          totalPages,
         });
 
-        const batchResults = await Promise.all(batchPromises);
-        allChunkNotes.push(...batchResults);
+        // Reduce max_tokens for QuickLook to speed up processing
+        const maxTokens = reviewType === "quicklook" ? 1200 : 1800;
 
-        // Add delay between batches to respect rate limits (except for last batch)
-        if (i + BATCH_SIZE < chunks.length) {
-          await sleep(15000); // Wait 15 seconds between batches
-          console.log(`⏳ Waiting 15s before next batch to respect rate limits...`);
-        }
+        const msg = await callWithBackoff(
+          () =>
+            anthropic.messages.create({
+              model: "claude-sonnet-4-20250514",
+              max_tokens: maxTokens,
+              temperature: 0.3,
+              system: HAIST_SYSTEM_PROMPT,
+              messages: [
+                {
+                  role: "user",
+                  content: [
+                    {
+                      type: "document",
+                      source: {
+                        type: "base64",
+                        media_type: "application/pdf",
+                        data: chunkB64,
+                      },
+                    },
+                    { type: "text", text: prompt },
+                  ],
+                },
+              ],
+            }),
+          `chunk ${chunk.startPage}-${chunk.endPage}`
+        );
+
+        const chunkText = (msg.content || [])
+          .filter((b) => b.type === "text")
+          .map((b) => b.text)
+          .join("\n\n")
+          .trim();
+
+        allChunkNotes.push(chunkText);
+        console.log(`✓ Chunk ${i + 1}/${chunks.length} complete (pages ${chunk.startPage}-${chunk.endPage})`);
       }
 
       console.log(`✅ All chunks processed, synthesizing final review (${reviewType})`);

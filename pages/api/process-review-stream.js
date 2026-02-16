@@ -182,79 +182,68 @@ export default async function handler(req, res) {
       totalChunks: chunks.length,
     });
 
-    // 2. Process chunks in batches to respect rate limits (30k tokens/min)
-    // Process 2 chunks at a time to stay under rate limit
-    const BATCH_SIZE = 2;
+    // 2. Process chunks sequentially to respect rate limits (30k tokens/min)
+    // Sequential processing prevents rate limit errors
     const allChunkNotes = [];
     let completedChunks = 0;
 
-    for (let i = 0; i < chunks.length; i += BATCH_SIZE) {
-      const batch = chunks.slice(i, i + BATCH_SIZE);
+    for (let i = 0; i < chunks.length; i++) {
+      const chunk = chunks[i];
 
-      const batchPromises = batch.map(async (chunk) => {
-        const chunkB64 = await extractPdfPagesBase64(base64Data, chunk.startPage, chunk.endPage);
-        const prompt = chunkPrompt({
-          documentType,
-          startPage: chunk.startPage,
-          endPage: chunk.endPage,
-          totalPages,
-        });
-
-        const maxTokens = reviewType === "quicklook" ? 1200 : 1800;
-
-        const msg = await callWithBackoff(
-          () =>
-            anthropic.messages.create({
-              model: "claude-sonnet-4-20250514",
-              max_tokens: maxTokens,
-              temperature: 0.3,
-              system: HAIST_SYSTEM_PROMPT,
-              messages: [
-                {
-                  role: "user",
-                  content: [
-                    {
-                      type: "document",
-                      source: {
-                        type: "base64",
-                        media_type: "application/pdf",
-                        data: chunkB64,
-                      },
-                    },
-                    { type: "text", text: prompt },
-                  ],
-                },
-              ],
-            }),
-          `chunk ${chunk.startPage}-${chunk.endPage}`
-        );
-
-        const chunkText = (msg.content || [])
-          .filter((b) => b.type === "text")
-          .map((b) => b.text)
-          .join("\n\n")
-          .trim();
-
-        completedChunks++;
-        const chunkPercent = 20 + Math.floor((completedChunks / chunks.length) * 50);
-        sendEvent({
-          type: "progress",
-          step: `Analyzed pages ${chunk.startPage}-${chunk.endPage} (${completedChunks}/${chunks.length} sections)`,
-          percent: chunkPercent,
-          completedChunks,
-          totalChunks: chunks.length,
-        });
-
-        return chunkText;
+      const chunkB64 = await extractPdfPagesBase64(base64Data, chunk.startPage, chunk.endPage);
+      const prompt = chunkPrompt({
+        documentType,
+        startPage: chunk.startPage,
+        endPage: chunk.endPage,
+        totalPages,
       });
 
-      const batchResults = await Promise.all(batchPromises);
-      allChunkNotes.push(...batchResults);
+      const maxTokens = reviewType === "quicklook" ? 1200 : 1800;
 
-      // Add delay between batches to respect rate limits (except for last batch)
-      if (i + BATCH_SIZE < chunks.length) {
-        await sleep(15000); // Wait 15 seconds between batches
-      }
+      const msg = await callWithBackoff(
+        () =>
+          anthropic.messages.create({
+            model: "claude-sonnet-4-20250514",
+            max_tokens: maxTokens,
+            temperature: 0.3,
+            system: HAIST_SYSTEM_PROMPT,
+            messages: [
+              {
+                role: "user",
+                content: [
+                  {
+                    type: "document",
+                    source: {
+                      type: "base64",
+                      media_type: "application/pdf",
+                      data: chunkB64,
+                    },
+                  },
+                  { type: "text", text: prompt },
+                ],
+              },
+            ],
+          }),
+        `chunk ${chunk.startPage}-${chunk.endPage}`
+      );
+
+      const chunkText = (msg.content || [])
+        .filter((b) => b.type === "text")
+        .map((b) => b.text)
+        .join("\n\n")
+        .trim();
+
+      allChunkNotes.push(chunkText);
+
+      completedChunks++;
+      const chunkPercent = 20 + Math.floor((completedChunks / chunks.length) * 50);
+      sendEvent({
+        type: "progress",
+        step: `Analyzed pages ${chunk.startPage}-${chunk.endPage} (${completedChunks}/${chunks.length} sections)`,
+        percent: chunkPercent,
+        completedChunks,
+        totalChunks: chunks.length,
+      });
     }
 
     sendEvent({

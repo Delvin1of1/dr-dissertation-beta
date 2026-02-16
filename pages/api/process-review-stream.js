@@ -57,11 +57,11 @@ async function callWithBackoff(fn, label = "anthropic", maxAttempts = 6) {
 }
 
 function chunkSizeFor(documentType = "full") {
-  // With prompt caching, we can use larger chunks since cached content doesn't count toward rate limit
-  // First chunk pays full cost, subsequent chunks get 90% discount
+  // With prompt caching, use larger chunks to minimize total processing time
+  // Balancing between: rate limits, Vercel timeout (5 min), and quality
   const t = String(documentType).toLowerCase();
-  if (t.includes("proposal")) return 15;
-  return 15; // Larger chunks now that we have caching
+  if (t.includes("proposal")) return 20;
+  return 20; // Larger chunks to stay under 5-minute timeout
 }
 
 function buildChunkPlan(totalPages, chunkSizePages) {

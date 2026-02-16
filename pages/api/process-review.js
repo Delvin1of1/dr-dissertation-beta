@@ -193,59 +193,70 @@ export default async function handler(req, res) {
 
       console.log(`📄 Document: ${totalPages} pages → ${chunks.length} chunks of ${chunkSizePages} pages`);
 
-      // 2. Process chunks in parallel (much faster!)
-      console.log(`🚀 Processing all chunks in parallel...`);
+      // 2. Process chunks in batches to respect rate limits (30k tokens/min)
+      // Process 2 chunks at a time to stay under Anthropic rate limit
+      console.log(`🚀 Processing chunks in batches of 2...`);
 
-      const chunkPromises = chunks.map(async (chunk, i) => {
-        const chunkB64 = await extractPdfPagesBase64(base64Data, chunk.startPage, chunk.endPage);
-        const prompt = chunkPrompt({
-          documentType,
-          startPage: chunk.startPage,
-          endPage: chunk.endPage,
-          totalPages,
+      const BATCH_SIZE = 2;
+      const allChunkNotes = [];
+
+      for (let i = 0; i < chunks.length; i += BATCH_SIZE) {
+        const batch = chunks.slice(i, i + BATCH_SIZE);
+        console.log(`📦 Processing batch ${Math.floor(i / BATCH_SIZE) + 1}/${Math.ceil(chunks.length / BATCH_SIZE)}`);
+
+        const batchPromises = batch.map(async (chunk, batchIndex) => {
+          const chunkB64 = await extractPdfPagesBase64(base64Data, chunk.startPage, chunk.endPage);
+          const prompt = chunkPrompt({
+            documentType,
+            startPage: chunk.startPage,
+            endPage: chunk.endPage,
+            totalPages,
+          });
+
+          // Reduce max_tokens for QuickLook to speed up processing
+          const maxTokens = reviewType === "quicklook" ? 1200 : 1800;
+
+          const msg = await callWithBackoff(
+            () =>
+              anthropic.messages.create({
+                model: "claude-sonnet-4-20250514",
+                max_tokens: maxTokens,
+                temperature: 0.3,
+                system: HAIST_SYSTEM_PROMPT,
+                messages: [
+                  {
+                    role: "user",
+                    content: [
+                      {
+                        type: "document",
+                        source: {
+                          type: "base64",
+                          media_type: "application/pdf",
+                          data: chunkB64,
+                        },
+                      },
+                      { type: "text", text: prompt },
+                    ],
+                  },
+                ],
+              }),
+            `chunk ${chunk.startPage}-${chunk.endPage}`
+          );
+
+          const chunkText = (msg.content || [])
+            .filter((b) => b.type === "text")
+            .map((b) => b.text)
+            .join("\n\n")
+            .trim();
+
+          const globalIndex = i + batchIndex + 1;
+          console.log(`✓ Chunk ${globalIndex}/${chunks.length} complete (pages ${chunk.startPage}-${chunk.endPage})`);
+          return chunkText;
         });
 
-        // Reduce max_tokens for QuickLook to speed up processing
-        const maxTokens = reviewType === "quicklook" ? 1200 : 1800;
-
-        const msg = await callWithBackoff(
-          () =>
-            anthropic.messages.create({
-              model: "claude-sonnet-4-20250514",
-              max_tokens: maxTokens,
-              temperature: 0.3,
-              system: HAIST_SYSTEM_PROMPT,
-              messages: [
-                {
-                  role: "user",
-                  content: [
-                    {
-                      type: "document",
-                      source: {
-                        type: "base64",
-                        media_type: "application/pdf",
-                        data: chunkB64,
-                      },
-                    },
-                    { type: "text", text: prompt },
-                  ],
-                },
-              ],
-            }),
-          `chunk ${chunk.startPage}-${chunk.endPage}`
-        );
-
-        const chunkText = (msg.content || [])
-          .filter((b) => b.type === "text")
-          .map((b) => b.text)
-          .join("\n\n")
-          .trim();
-
-        console.log(`✓ Chunk ${i + 1}/${chunks.length} complete (pages ${chunk.startPage}-${chunk.endPage})`);
-        return chunkText;
-      });
-
-      const allChunkNotes = await Promise.all(chunkPromises);
+        const batchResults = await Promise.all(batchPromises);
+        allChunkNotes.push(...batchResults);
+      }
 
       console.log(`✅ All chunks processed, synthesizing final review (${reviewType})`);
 

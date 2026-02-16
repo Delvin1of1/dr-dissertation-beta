@@ -106,6 +106,7 @@ export default function HomePage() {
           fileContent,
           fileName: selectedFile.name,
           documentType,
+          reviewType, // Pass QuickLook vs Full Review type
         }),
       });
 

@@ -1,7 +1,7 @@
 // pages/api/process-review.js
 import Anthropic from "@anthropic-ai/sdk";
 import { PDFDocument } from "pdf-lib";
-import { HAIST_SYSTEM_PROMPT } from "./haist-prompt.js";
+import { HAIST_SYSTEM_PROMPT, getQuickLookPrompt, getFullReviewPrompt } from "./haist-prompt.js";
 
 export const config = {
   maxDuration: 300, // Vercel function max (5 min)
@@ -131,30 +131,12 @@ Important:
 `.trim();
 }
 
-function synthesisPrompt({ documentType }) {
-  const mode = documentType || "full";
-  return `
-You will receive multiple chunk-level notes from a dissertation/proposal review.
-
-Task:
-1) Merge duplicates and contradictions.
-2) Produce a single cohesive HAIST-style review aligned to "${mode}".
-3) Keep page citations (p. X) when available. If a point appears in multiple chunks, keep the most relevant citation(s).
-4) Tone: professional, clean, committee-ready (minimalist academic).
-
-Output format:
-- Title (one line)
-- Executive Summary (6–10 bullets, highest priority first)
-- Strengths (grouped)
-- Priority Revisions (Critical / High / Medium)
-- Chapter-by-Chapter Guidance (if possible)
-- “Quick Fix Checklist” (checkbox bullets)
-- “Defense/Submission Readiness” (1 short paragraph)
-
-Constraints:
-- Do not mention chunking, token limits, or API constraints.
-- Do not include implementation details about the system.
-`.trim();
+function synthesisPrompt({ documentType, reviewType = "full" }) {
+  // Use appropriate prompt based on review type
+  if (reviewType === "quicklook") {
+    return getQuickLookPrompt(documentType);
+  }
+  return getFullReviewPrompt(documentType);
 }
 
 export default async function handler(req, res) {
@@ -180,6 +162,7 @@ export default async function handler(req, res) {
       fileContent,
       fileName,
       documentType = "full",
+      reviewType = "full", // QuickLook or Full Review
       startPage,
       endPage,
       totalPages: totalPagesFromClient,
@@ -298,7 +281,7 @@ export default async function handler(req, res) {
             temperature: 0.25,
             system: HAIST_SYSTEM_PROMPT,
             messages: [
-              { role: "user", content: [{ type: "text", text: synthesisPrompt({ documentType }) }] },
+              { role: "user", content: [{ type: "text", text: synthesisPrompt({ documentType, reviewType }) }] },
               {
                 role: "user",
                 content: [

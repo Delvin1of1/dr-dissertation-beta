@@ -52,8 +52,10 @@ export default function AccountPage() {
   return (
     <div style={{ minHeight: "100vh", background: "#f8f5ff", fontFamily: "system-ui, -apple-system, sans-serif" }}>
       {/* Navbar */}
-      <nav style={{ background: "#fff", borderBottom: "1px solid #eee", padding: "0 24px", display: "flex", alignItems: "center", justifyContent: "space-between", height: 60 }}>
-        <Link href="/dashboard" style={{ fontWeight: 900, fontSize: 18, color: "#1a1a2e", textDecoration: "none" }}>Dr. Dissertation</Link>
+      <nav style={{ background: "#fff", borderBottom: "1px solid #eee", padding: "0 24px", display: "flex", alignItems: "center", justifyContent: "space-between", height: 70 }}>
+        <Link href="/dashboard">
+          <img src="/logo-header-perfect.svg" alt="Dr. Dissertation" height={48} style={{ display: "block", maxWidth: 240 }} />
+        </Link>
         <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
           <div style={{ background: "#f0ebff", color: "#6c3fc5", borderRadius: 20, padding: "4px 14px", fontSize: 13, fontWeight: 700 }}>
             {credits} credit{credits !== 1 ? "s" : ""}
@@ -65,7 +67,9 @@ export default function AccountPage() {
             {showDropdown && (
               <div style={{ position: "absolute", right: 0, top: "calc(100% + 8px)", background: "#fff", borderRadius: 12, boxShadow: "0 4px 24px rgba(0,0,0,0.12)", minWidth: 160, zIndex: 100 }}>
                 <Link href="/dashboard" style={{ display: "block", padding: "12px 18px", color: "#333", textDecoration: "none", fontSize: 14, fontWeight: 600 }}>Dashboard</Link>
-                <Link href="/admin" style={{ display: "block", padding: "12px 18px", color: "#333", textDecoration: "none", fontSize: 14, fontWeight: 600 }}>Admin Panel</Link>
+                {profile?.is_admin && (
+                  <Link href="/admin" style={{ display: "block", padding: "12px 18px", color: "#6c3fc5", textDecoration: "none", fontSize: 14, fontWeight: 600 }}>⚙️ Admin Panel</Link>
+                )}
                 <button onClick={handleSignOut} style={{ display: "block", width: "100%", padding: "12px 18px", color: "#e74c3c", background: "none", border: "none", textAlign: "left", fontSize: 14, fontWeight: 600, cursor: "pointer" }}>Sign Out</button>
               </div>
             )}
@@ -106,10 +110,10 @@ export default function AccountPage() {
         {/* Buy Credits */}
         <div style={{ background: "#fff", borderRadius: 16, padding: 32, boxShadow: "0 2px 12px rgba(0,0,0,0.07)" }}>
           <h3 style={{ margin: "0 0 16px", color: "#1a1a2e" }}>Purchase Credits</h3>
-          <p style={{ color: "#666", fontSize: 14, marginBottom: 20 }}>Each credit = one full HAIST© review of your dissertation or proposal.</p>
-          <a href="/api/checkout?credits=1" style={{ display: "inline-block", background: "linear-gradient(135deg,#6c3fc5,#9b6ef3)", color: "#fff", textDecoration: "none", padding: "12px 24px", borderRadius: 10, fontWeight: 700, fontSize: 15 }}>
-            Buy 1 Credit — $29 →
-          </a>
+          <p style={{ color: "#666", fontSize: 14, marginBottom: 20 }}>Choose from QuickLook or Full Review credits — no subscription required.</p>
+          <Link href="/checkout" style={{ display: "inline-block", background: "linear-gradient(135deg,#6c3fc5,#9b6ef3)", color: "#fff", textDecoration: "none", padding: "12px 24px", borderRadius: 10, fontWeight: 700, fontSize: 15 }}>
+            Purchase Credits →
+          </Link>
         </div>
       </div>
     </div>

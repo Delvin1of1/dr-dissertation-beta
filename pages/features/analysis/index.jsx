@@ -22,7 +22,7 @@ export default function FeatureAnalysis() {
       <Navigation />
       <section className="hero" style={{ padding: "80px 24px 60px" }}>
         <div className="hero-badge"><span className="hero-badge-dot" />The HAIST© Framework</div>
-        <h1>🎯 <span className="highlight">10-Dimensional</span> Analysis</h1>
+        <h1>🎯 <span className="highlight">10-Dimensional</span> Dissertation Analysis</h1>
         <p className="hero-sub">
           The same rigorous methodology used by dissertation committee chairs — now powered by AI.
           Developed by John C. Chick, Ed.D. and Laura Morello, Ed.D.
@@ -62,15 +62,15 @@ export default function FeatureAnalysis() {
           </div>
 
           {/* 10 Dimensions */}
-          <h2 className="section-title" style={{ marginBottom: 8 }}>The 10 HAIST© Dimensions</h2>
+          <h2 className="section-title" style={{ marginBottom: 8 }}>The 10 HAIST© Dissertation Dimensions</h2>
           <p className="section-sub" style={{ marginBottom: 36 }}>Every dimension of your dissertation, reviewed with expert precision</p>
 
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(280px,1fr))", gap: 20 }}>
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(2, 1fr)", gap: 16 }}>
             {DIMENSIONS.map((d) => (
-              <div key={d.num} style={{ background: "#fff", borderRadius: 14, padding: "24px", boxShadow: "0 2px 8px rgba(0,0,0,0.06)", display: "flex", gap: 16 }}>
-                <div style={{ width: 44, height: 44, background: "linear-gradient(135deg,#6366F1,#8B5CF6)", borderRadius: 10, display: "flex", alignItems: "center", justifyContent: "center", color: "#fff", fontWeight: 800, fontSize: 18, flexShrink: 0 }}>{d.num}</div>
+              <div key={d.num} style={{ background: "#fff", borderRadius: 14, padding: "20px 24px", boxShadow: "0 2px 8px rgba(0,0,0,0.06)", display: "flex", gap: 16, alignItems: "flex-start" }}>
+                <div style={{ width: 42, height: 42, background: "linear-gradient(135deg,#6366F1,#8B5CF6)", borderRadius: 10, display: "flex", alignItems: "center", justifyContent: "center", color: "#fff", fontWeight: 800, fontSize: 17, flexShrink: 0 }}>{d.num}</div>
                 <div>
-                  <div style={{ fontWeight: 700, color: "#1e293b", marginBottom: 6, fontSize: 15 }}>{d.name}</div>
+                  <div style={{ fontWeight: 700, color: "#1e293b", marginBottom: 5, fontSize: 15 }}>{d.name}</div>
                   <div style={{ fontSize: 13, color: "#64748b", lineHeight: 1.6 }}>{d.desc}</div>
                 </div>
               </div>

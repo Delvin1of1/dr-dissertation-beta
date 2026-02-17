@@ -164,7 +164,7 @@ export default function DashboardPage() {
         </div>
       </nav>
 
-      <div style={{ maxWidth:860, margin:"0 auto", padding:"32px 24px 64px" }}>
+      <div style={{ maxWidth:960, margin:"0 auto", padding:"32px 24px 64px" }}>
 
         {/* WELCOME */}
         <div style={{ marginBottom:28 }}>
@@ -226,7 +226,7 @@ export default function DashboardPage() {
 
             <FileUpload onFileSelect={(f) => { setSelectedFile(f); setReview(""); setReviewError(""); }} />
 
-            <div style={{ marginTop:20, display:"flex", gap:24, flexWrap:"wrap" }}>
+            <div style={{ marginTop:20, display:"flex", gap:24, flexWrap:"wrap", justifyContent:"center" }}>
               <label style={{ display:"flex", alignItems:"center", gap:8, fontSize:14, color:"#444", cursor:"pointer", fontWeight:500 }}>
                 <input type="radio" name="doctype" checked={docType === "proposal"} onChange={() => setDocType("proposal")} disabled={reviewing} />
                 Proposal (Chapters 1–3)
@@ -237,18 +237,18 @@ export default function DashboardPage() {
               </label>
             </div>
 
-            <div style={{ marginTop:20, display:"flex", gap:12, flexWrap:"wrap" }}>
+            <div style={{ marginTop:20, display:"flex", gap:12 }}>
               <button
                 onClick={generateReview}
                 disabled={reviewing || !selectedFile || totalCredits === 0}
-                style={{ background:"linear-gradient(135deg,#6c3fc5,#9b6ef3)", color:"#fff", border:"none", borderRadius:12, padding:"13px 28px", fontSize:15, fontWeight:700, cursor:"pointer", opacity:(reviewing || !selectedFile || totalCredits === 0) ? 0.6 : 1 }}
+                style={{ flex:1, background:"linear-gradient(135deg,#6c3fc5,#9b6ef3)", color:"#fff", border:"none", borderRadius:12, padding:"13px 0", fontSize:15, fontWeight:700, cursor:"pointer", opacity:(reviewing || !selectedFile || totalCredits === 0) ? 0.6 : 1 }}
               >
                 {reviewing ? "Generating…" : "Get My Review →"}
               </button>
               <button
                 onClick={() => downloadDocx(review, selectedFile?.name)}
                 disabled={!review}
-                style={{ background:"#f0ebff", color:"#6c3fc5", border:"none", borderRadius:12, padding:"13px 24px", fontSize:15, fontWeight:700, cursor:"pointer", opacity:!review ? 0.5 : 1 }}
+                style={{ flex:1, background:"#f0ebff", color:"#6c3fc5", border:"none", borderRadius:12, padding:"13px 0", fontSize:15, fontWeight:700, cursor:"pointer", opacity:!review ? 0.5 : 1 }}
               >
                 Download .docx
               </button>

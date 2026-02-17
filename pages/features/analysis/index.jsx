@@ -49,7 +49,7 @@ export default function FeatureAnalysis() {
           <div style={{ display: "flex", justifyContent: "center", gap: 12, marginBottom: 60, flexWrap: "wrap" }}>
             {[
               { letter: "H", word: "Human" },
-              { letter: "A", word: "AI" },
+              { letter: "A", word: "Artificial" },
               { letter: "I", word: "Intelligence" },
               { letter: "S", word: "Symbiotic" },
               { letter: "T", word: "Theory" },

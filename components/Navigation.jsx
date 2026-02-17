@@ -24,7 +24,7 @@ export default function Navigation() {
     <>
       <nav className="nav">
         <Link href="/" className="nav-logo" style={{ display: "flex", alignItems: "center" }}>
-          <img src="/logo-header-perfect.svg" alt="Dr. Dissertation" height={44} style={{ display: "block", maxWidth: 220 }} />
+          <img src="/logo-header-perfect.svg" alt="Dr. Dissertation" height={58} style={{ display: "block", maxWidth: 290 }} />
         </Link>
         <div className="nav-links">
           <Link href="/" className="nav-link">Home</Link>

@@ -25,7 +25,7 @@ export default function FeatureAnalysis() {
         <h1>🎯 <span className="highlight">10-Dimensional</span> Analysis</h1>
         <p className="hero-sub">
           The same rigorous methodology used by dissertation committee chairs — now powered by AI.
-          Developed by <strong>John C. Chick, Ed.D.</strong> and <strong>Laura Morello, Ed.D.</strong>
+          Developed by John C. Chick, Ed.D. and Laura Morello, Ed.D.
         </p>
         <Link href="/auth/signup" className="btn-primary">Start First Review →</Link>
       </section>
@@ -38,22 +38,21 @@ export default function FeatureAnalysis() {
           <div style={{ textAlign: "center", marginBottom: 52 }}>
             <h2 className="section-title" style={{ marginBottom: 16 }}>What is HAIST©?</h2>
             <p style={{ color: "#64748b", fontSize: 16, lineHeight: 1.8, maxWidth: 700, margin: "0 auto" }}>
-              <strong>HAIST©</strong> stands for <strong>Holistic Academic Integrity and Scholarly Thoroughness</strong> — a
-              proprietary dissertation evaluation framework developed by <strong>John C. Chick, Ed.D.</strong> and{" "}
-              <strong>Laura Morello, Ed.D.</strong> from decades of experience as dissertation committee chairs and
-              academic researchers. HAIST© provides a structured, comprehensive approach to identifying every critical
-              weakness in a doctoral dissertation before your committee does.
+              HAIST© stands for <strong>Human-AI Symbiotic Theory</strong> — a proprietary dissertation evaluation
+              framework developed by John C. Chick, Ed.D. and Laura Morello, Ed.D. from decades of experience as
+              dissertation committee chairs and academic researchers. HAIST© provides a structured, comprehensive
+              approach to identifying every critical weakness in a doctoral dissertation before your committee does.
             </p>
           </div>
 
           {/* HAIST Letters Banner */}
           <div style={{ display: "flex", justifyContent: "center", gap: 12, marginBottom: 60, flexWrap: "wrap" }}>
             {[
-              { letter: "H", word: "Holistic" },
-              { letter: "A", word: "Academic" },
-              { letter: "I", word: "Integrity" },
-              { letter: "S", word: "Scholarly" },
-              { letter: "T", word: "Thoroughness" },
+              { letter: "H", word: "Human" },
+              { letter: "A", word: "AI" },
+              { letter: "I", word: "Intelligence" },
+              { letter: "S", word: "Symbiotic" },
+              { letter: "T", word: "Theory" },
             ].map(({ letter, word }) => (
               <div key={letter} style={{ background: "#fff", borderRadius: 16, padding: "20px 24px", textAlign: "center", boxShadow: "0 2px 12px rgba(0,0,0,0.07)", minWidth: 110 }}>
                 <div style={{ fontSize: 42, fontWeight: 900, background: "linear-gradient(135deg,#6366F1,#8B5CF6)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}>{letter}</div>

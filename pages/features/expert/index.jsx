@@ -11,7 +11,7 @@ export default function FeatureExpert() {
         <div className="hero-badge"><span className="hero-badge-dot" />Expert Team</div>
         <h1>🎓 <span className="highlight">Expert-Developed</span></h1>
         <p className="hero-sub">
-          Created by <strong>John C. Chick, Ed.D.</strong> and <strong>Laura Morello, Ed.D.</strong> — dissertation
+          Created by John C. Chick, Ed.D. and Laura Morello, Ed.D. — dissertation
           committee chairs and educational AI specialists with decades of academic experience.
         </p>
         <Link href="/auth/signup" className="btn-primary">Start First Review →</Link>

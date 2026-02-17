@@ -5,6 +5,7 @@ import Link from "next/link";
 import { supabase } from "../lib/supabase";
 import { signOut } from "../lib/auth-helpers";
 import FileUpload from "../components/FileUpload";
+import PromoCodeInput from "../components/PromoCodeInput";
 import { Document, Packer, Paragraph, TextRun } from "docx";
 
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
@@ -21,6 +22,7 @@ export default function DashboardPage() {
   const [review, setReview] = useState("");
   const [reviewError, setReviewError] = useState("");
   const [showDropdown, setShowDropdown] = useState(false);
+  const [showPromo, setShowPromo] = useState(false);
 
   useEffect(() => {
     async function init() {
@@ -36,6 +38,12 @@ export default function DashboardPage() {
     document.addEventListener("click", handler);
     return () => document.removeEventListener("click", handler);
   }, [router]);
+
+  async function refreshProfile() {
+    if (!user) return;
+    const { data: prof } = await supabase.from("users").select("*").eq("id", user.id).single();
+    setProfile(prof);
+  }
 
   async function callApi(body) {
     const res = await fetch("/api/process-review", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
@@ -81,9 +89,7 @@ export default function DashboardPage() {
       await supabase.from("reviews").insert({ user_id: user.id, file_name: fileName, document_type: docType, review_text: finalData.review });
       setReview(finalData.review);
       setStatusMsg("");
-
-      const { data: up } = await supabase.from("users").select("*").eq("id", user.id).single();
-      setProfile(up);
+      await refreshProfile();
     } catch (e) {
       const msg = e?.message || "Something went wrong. Please try again.";
       setReviewError(msg.includes("429") || msg.toLowerCase().includes("rate") || msg.toLowerCase().includes("too many")
@@ -112,13 +118,14 @@ export default function DashboardPage() {
   if (loading) {
     return (
       <div style={{ minHeight:"100vh", display:"flex", flexDirection:"column", alignItems:"center", justifyContent:"center", background:"#f8f5ff" }}>
-        <img src="/logo-header-perfect.svg" alt="Dr. Dissertation" height={48} style={{ marginBottom:20 }} />
+        <img src="/logo-header-perfect.svg" alt="Dr. Dissertation" height={60} style={{ marginBottom:20, maxWidth:300 }} />
         <p style={{ color:"#6c3fc5" }}>Loading…</p>
       </div>
     );
   }
 
   const firstName = profile?.full_name?.split(" ")[0] || user?.email?.split("@")[0] || "there";
+  const isAdmin = user?.email === "jchick@bridgeport.edu" || profile?.is_admin;
   const qlFirst = profile?.credits_quicklook_first ?? (profile?.credits ?? 0);
   const qlReg   = profile?.credits_quicklook_regular ?? 0;
   const full    = profile?.credits_full_review ?? 0;
@@ -128,9 +135,9 @@ export default function DashboardPage() {
     <div style={{ minHeight:"100vh", background:"#f8f5ff", fontFamily:"'Inter', system-ui, -apple-system, sans-serif" }}>
 
       {/* NAVBAR */}
-      <nav style={{ background:"#fff", borderBottom:"1px solid #eee", padding:"0 32px", display:"flex", alignItems:"center", justifyContent:"space-between", height:64, position:"sticky", top:0, zIndex:50 }}>
+      <nav style={{ background:"#fff", borderBottom:"1px solid #eee", padding:"0 32px", display:"flex", alignItems:"center", justifyContent:"space-between", height:80, position:"sticky", top:0, zIndex:50 }}>
         <Link href="/">
-          <img src="/logo-header-perfect.svg" alt="Dr. Dissertation" height={40} style={{ display:"block" }} />
+          <img src="/logo-header-perfect.svg" alt="Dr. Dissertation" height={58} style={{ display:"block", maxWidth:290 }} />
         </Link>
         <div id="acct-dd" style={{ position:"relative" }}>
           <button
@@ -142,7 +149,9 @@ export default function DashboardPage() {
           {showDropdown && (
             <div style={{ position:"absolute", right:0, top:"calc(100% + 10px)", background:"#fff", borderRadius:14, boxShadow:"0 8px 32px rgba(0,0,0,0.14)", minWidth:180, zIndex:100, overflow:"hidden", border:"1px solid #f0f0f0" }}>
               <Link href="/account" style={{ display:"block", padding:"13px 18px", color:"#1a1a2e", textDecoration:"none", fontSize:14, fontWeight:600, borderBottom:"1px solid #f5f5f5" }}>👤 My Account</Link>
-              <Link href="/admin"   style={{ display:"block", padding:"13px 18px", color:"#1a1a2e", textDecoration:"none", fontSize:14, fontWeight:600, borderBottom:"1px solid #f5f5f5" }}>🛡️ Admin Panel</Link>
+              {isAdmin && (
+                <Link href="/admin" style={{ display:"block", padding:"13px 18px", color:"#6c3fc5", textDecoration:"none", fontSize:14, fontWeight:600, borderBottom:"1px solid #f5f5f5" }}>⚙️ Admin Panel</Link>
+              )}
               <button onClick={async () => { await signOut(); router.push("/auth/login"); }} style={{ display:"block", width:"100%", padding:"13px 18px", color:"#e74c3c", background:"none", border:"none", textAlign:"left", fontSize:14, fontWeight:600, cursor:"pointer" }}>Sign Out</button>
             </div>
           )}
@@ -185,6 +194,20 @@ export default function DashboardPage() {
             <div style={{ fontSize:12, color:"#bbb", marginBottom:14 }}>credits</div>
             <Link href="/checkout" style={{ display:"inline-block", background:"#f0ebff", color:"#6c3fc5", borderRadius:8, padding:"7px 18px", fontSize:13, fontWeight:700, textDecoration:"none" }}>Buy More</Link>
           </div>
+        </div>
+
+        {/* PROMO CODE */}
+        <div style={{ marginBottom:24 }}>
+          {showPromo ? (
+            <PromoCodeInput userId={user?.id} onSuccess={refreshProfile} />
+          ) : (
+            <button
+              onClick={() => setShowPromo(true)}
+              style={{ background:"none", border:"none", color:"#6c3fc5", fontSize:13, fontWeight:600, cursor:"pointer", textDecoration:"underline", padding:0 }}
+            >
+              Have a promo code?
+            </button>
+          )}
         </div>
 
         {/* NO CREDITS BANNER */}

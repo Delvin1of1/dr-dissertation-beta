@@ -12,7 +12,7 @@ export default function FeatureResearch() {
         <h1>📊 <span className="highlight">Research-Backed</span> Methodology</h1>
         <p className="hero-sub">
           Built on decades of academic research and real dissertation committee experience by{" "}
-          <strong>John C. Chick, Ed.D.</strong> and <strong>Laura Morello, Ed.D.</strong>
+          John C. Chick, Ed.D. and Laura Morello, Ed.D.
         </p>
         <Link href="/auth/signup" className="btn-primary">Start First Review →</Link>
       </section>

@@ -10,8 +10,11 @@ export default function FeatureResearch() {
       <section className="hero" style={{ padding: "80px 24px 60px" }}>
         <div className="hero-badge"><span className="hero-badge-dot" />Research Foundation</div>
         <h1>📊 <span className="highlight">Research-Backed</span> Methodology</h1>
-        <p className="hero-sub">Built on decades of academic research and real dissertation committee experience.</p>
-        <Link href="/auth/signup" className="btn-primary">Start Free Review →</Link>
+        <p className="hero-sub">
+          Built on decades of academic research and real dissertation committee experience by{" "}
+          <strong>John C. Chick, Ed.D.</strong> and <strong>Laura Morello, Ed.D.</strong>
+        </p>
+        <Link href="/auth/signup" className="btn-primary">Start First Review →</Link>
       </section>
       <section className="section" style={{ background: "#f8fafc" }}>
         <div style={{ maxWidth: 800, margin: "0 auto" }}>

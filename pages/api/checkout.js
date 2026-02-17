@@ -7,19 +7,52 @@ const supabaseAdmin = createClient(
   process.env.SUPABASE_SERVICE_KEY
 );
 
-// Price per credit in cents
-const CREDIT_PRICE = 2900; // $29.00
+const BASE_URL = process.env.NEXT_PUBLIC_SITE_URL || "https://www.doctordissertation.com";
+
+// Product catalog — matches checkout/index.jsx PRODUCTS array
+const PRODUCTS = {
+  quicklook_first: {
+    name: "First-Time QuickLook Review",
+    description: "~10 min turnaround · Top 5 critical HAIST© dimensions · Defense blockers identified · Professional Word document",
+    amount: 999,   // $9.99
+    creditField: "credits_quicklook_first",
+    credits: 1,
+  },
+  quicklook_regular: {
+    name: "QuickLook Review",
+    description: "~10 min turnaround · All HAIST© dimensions · Page-specific citations · Detailed recommendations · Priority support",
+    amount: 2999,  // $29.99
+    creditField: "credits_quicklook_regular",
+    credits: 1,
+  },
+  full_review: {
+    name: "Full Review",
+    description: "All 10 HAIST© dimensions · Comprehensive analysis · Within 3 business days · Bonus QuickLook credit · Expert consultation available",
+    amount: 4999,  // $49.99
+    creditField: "credits_full_review",
+    credits: 2,   // grants full_review credit + quicklook bonus
+  },
+};
 
 export default async function handler(req, res) {
-  // Allow GET for direct link navigation or POST from form
+  // Allow both GET (redirect link) and POST (form submission)
+  const productId = req.query.product || req.body?.product || "quicklook_regular";
   const userId = req.query.userId || req.body?.userId;
-  const credits = parseInt(req.query.credits || req.body?.credits || "1", 10);
+
+  const product = PRODUCTS[productId];
+  if (!product) {
+    return res.status(400).json({ error: `Unknown product: ${productId}` });
+  }
 
   // Get user email for Stripe prefill
   let customerEmail;
   if (userId) {
-    const { data } = await supabaseAdmin.from("users").select("email").eq("id", userId).single();
-    customerEmail = data?.email;
+    try {
+      const { data } = await supabaseAdmin.from("users").select("email").eq("id", userId).single();
+      customerEmail = data?.email;
+    } catch (_) {
+      // Non-fatal — proceed without prefill
+    }
   }
 
   try {
@@ -30,28 +63,29 @@ export default async function handler(req, res) {
           price_data: {
             currency: "usd",
             product_data: {
-              name: `Dr. Dissertation Review Credit${credits > 1 ? "s" : ""}`,
-              description: `${credits} HAIST© dissertation review credit${credits > 1 ? "s" : ""}`,
+              name: product.name,
+              description: product.description,
             },
-            unit_amount: CREDIT_PRICE,
+            unit_amount: product.amount,
           },
-          quantity: credits,
+          quantity: 1,
         },
       ],
       mode: "payment",
-      customer_email: customerEmail,
+      customer_email: customerEmail || undefined,
       metadata: {
         userId: userId || "",
-        credits: String(credits),
+        productId,
+        creditField: product.creditField,
+        credits: String(product.credits),
       },
-      success_url: `${process.env.NEXT_PUBLIC_SITE_URL || "https://www.doctordissertation.com"}/dashboard?payment=success`,
-      cancel_url: `${process.env.NEXT_PUBLIC_SITE_URL || "https://www.doctordissertation.com"}/account`,
+      success_url: `${BASE_URL}/checkout/success`,
+      cancel_url: `${BASE_URL}/checkout/cancel`,
     });
 
-    // Redirect to Stripe checkout
     res.redirect(303, session.url);
   } catch (err) {
     console.error("Stripe checkout error:", err.message);
-    res.status(500).json({ error: err.message });
+    res.status(500).json({ error: "Unable to create checkout session. Please try again." });
   }
 }

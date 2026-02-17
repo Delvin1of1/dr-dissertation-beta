@@ -14,7 +14,6 @@ export default function DashboardPage() {
   const [user, setUser] = useState(null);
   const [profile, setProfile] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [reviews, setReviews] = useState([]);
   const [selectedFile, setSelectedFile] = useState(null);
   const [docType, setDocType] = useState("full");
   const [reviewing, setReviewing] = useState(false);
@@ -30,8 +29,6 @@ export default function DashboardPage() {
       setUser(session.user);
       const { data: prof } = await supabase.from("users").select("*").eq("id", session.user.id).single();
       setProfile(prof);
-      const { data: revs } = await supabase.from("reviews").select("*").eq("user_id", session.user.id).order("created_at", { ascending: false });
-      setReviews(revs || []);
       setLoading(false);
     }
     init();
@@ -87,8 +84,6 @@ export default function DashboardPage() {
 
       const { data: up } = await supabase.from("users").select("*").eq("id", user.id).single();
       setProfile(up);
-      const { data: ur } = await supabase.from("reviews").select("*").eq("user_id", user.id).order("created_at", { ascending: false });
-      setReviews(ur || []);
     } catch (e) {
       const msg = e?.message || "Something went wrong. Please try again.";
       setReviewError(msg.includes("429") || msg.toLowerCase().includes("rate") || msg.toLowerCase().includes("too many")
@@ -261,23 +256,6 @@ export default function DashboardPage() {
           )}
         </div>
 
-        {/* PAST REVIEWS */}
-        {reviews.length > 0 && (
-          <div style={{ background:"#fff", borderRadius:20, padding:"28px", boxShadow:"0 2px 16px rgba(0,0,0,0.07)" }}>
-            <h2 style={{ fontSize:20, fontWeight:800, color:"#1a1a2e", margin:"0 0 20px" }}>Past Reviews</h2>
-            {reviews.map((r) => (
-              <div key={r.id} style={{ display:"flex", justifyContent:"space-between", alignItems:"center", padding:"14px 0", borderBottom:"1px solid #f0f0f0" }}>
-                <div>
-                  <div style={{ fontWeight:600, color:"#1a1a2e", fontSize:14 }}>{r.file_name}</div>
-                  <div style={{ color:"#aaa", fontSize:12, marginTop:3 }}>{new Date(r.created_at).toLocaleDateString()} · {r.document_type}</div>
-                </div>
-                <button onClick={() => downloadDocx(r.review_text, r.file_name)} style={{ background:"#f0ebff", color:"#6c3fc5", border:"none", borderRadius:8, padding:"7px 16px", fontSize:13, fontWeight:700, cursor:"pointer" }}>
-                  Download
-                </button>
-              </div>
-            ))}
-          </div>
-        )}
       </div>
     </div>
   );

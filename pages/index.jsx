@@ -22,7 +22,7 @@ export default function HomePage() {
           The HAIST© methodology identifies critical issues that could block your defense. Get expert-level feedback without the wait.
         </p>
         <div className="hero-actions">
-          <Link href="/auth/signup" className="btn-primary">Start Free Review →</Link>
+          <Link href="/auth/signup" className="btn-primary">Start First Review →</Link>
           <Link href="#pricing" className="btn-secondary">See Pricing</Link>
         </div>
       </section>
@@ -67,7 +67,7 @@ export default function HomePage() {
               <li>Priority action items</li>
               <li>Professional Word document</li>
             </ul>
-            <Link href="/auth/signup" className="pricing-cta secondary">Get Started →</Link>
+            <Link href="/checkout" className="pricing-cta secondary">Get Started →</Link>
           </div>
 
           {/* Most Popular */}
@@ -77,13 +77,13 @@ export default function HomePage() {
             <div className="pricing-price">$29.99 <span>/ review</span></div>
             <div className="pricing-sub">QuickLook Review</div>
             <ul className="pricing-features">
-              <li>All student features</li>
-              <li>Unlimited QuickLook reviews</li>
+              <li>All HAIST© dimensions</li>
               <li>Page-specific citations</li>
               <li>Detailed recommendations</li>
               <li>Priority support</li>
+              <li>Professional Word document</li>
             </ul>
-            <Link href="/auth/signup" className="pricing-cta">Get Started →</Link>
+            <Link href="/checkout" className="pricing-cta">Get Started →</Link>
           </div>
 
           {/* Full Review */}
@@ -99,7 +99,7 @@ export default function HomePage() {
               <li>Direct email delivery</li>
               <li>Expert consultation available</li>
             </ul>
-            <Link href="/auth/signup" className="pricing-cta secondary">Get Started →</Link>
+            <Link href="/checkout" className="pricing-cta secondary">Get Started →</Link>
           </div>
         </div>
         <p style={{ textAlign: "center", color: "#64748b", fontSize: 14 }}>
@@ -112,7 +112,7 @@ export default function HomePage() {
       <div className="cta-banner">
         <h2>Ready to defend with confidence?</h2>
         <p>Join hundreds of doctoral students who&apos;ve strengthened their dissertations with Dr. Dissertation.</p>
-        <Link href="/auth/signup" className="btn-white">Start Your Free Review →</Link>
+        <Link href="/auth/signup" className="btn-white">Start Your First Review →</Link>
       </div>
 
       <Footer />

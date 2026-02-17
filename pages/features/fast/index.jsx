@@ -11,7 +11,7 @@ export default function FeatureFast() {
         <div className="hero-badge"><span className="hero-badge-dot" />Feature</div>
         <h1>⚡ <span className="highlight">Lightning Fast</span> Reviews</h1>
         <p className="hero-sub">Get critical feedback in minutes, not weeks.</p>
-        <Link href="/auth/signup" className="btn-primary">Start Free Review →</Link>
+        <Link href="/auth/signup" className="btn-primary">Start First Review →</Link>
       </section>
       <section className="section">
         <div style={{ maxWidth: 800, margin: "0 auto" }}>

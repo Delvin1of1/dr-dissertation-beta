@@ -10,8 +10,11 @@ export default function FeatureExpert() {
       <section className="hero" style={{ padding: "80px 24px 60px" }}>
         <div className="hero-badge"><span className="hero-badge-dot" />Expert Team</div>
         <h1>🎓 <span className="highlight">Expert-Developed</span></h1>
-        <p className="hero-sub">Created by dissertation committee chairs and educational AI specialists with decades of experience.</p>
-        <Link href="/auth/signup" className="btn-primary">Start Free Review →</Link>
+        <p className="hero-sub">
+          Created by <strong>John C. Chick, Ed.D.</strong> and <strong>Laura Morello, Ed.D.</strong> — dissertation
+          committee chairs and educational AI specialists with decades of academic experience.
+        </p>
+        <Link href="/auth/signup" className="btn-primary">Start First Review →</Link>
       </section>
       <section className="section" style={{ background: "#f8fafc" }}>
         <div style={{ maxWidth: 800, margin: "0 auto" }}>
@@ -23,10 +26,10 @@ export default function FeatureExpert() {
               </div>
             ))}
           </div>
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 24 }}>
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 24, marginBottom: 40 }}>
             {[
-              { title: "Dissertation Committee Chairs", desc: "Dr. Dissertation was created by academics who have sat on hundreds of dissertation committees. They know exactly what reviewers look for — and what causes defenses to fail.", icon: "🎓" },
-              { title: "Educational AI Specialists", desc: "Our AI team has deployed over 10 educational AI projects, ensuring the technology accurately reflects academic standards rather than generic writing advice.", icon: "🤖" },
+              { title: "John C. Chick, Ed.D.", desc: "Dr. Chick has chaired hundreds of dissertation committees and spent 15+ years identifying the patterns that cause defenses to fail. He co-developed the HAIST© framework to bring that expertise to every doctoral student.", icon: "🎓" },
+              { title: "Laura Morello, Ed.D.", desc: "Dr. Morello brings deep expertise in educational research methodology and academic standards across disciplines. Her insights inform HAIST©'s rigorous approach to evaluating scholarly contribution and writing quality.", icon: "🎓" },
             ].map(c => (
               <div key={c.title} style={{ background: "#fff", borderRadius: 16, padding: 28, boxShadow: "0 2px 12px rgba(0,0,0,0.07)" }}>
                 <div style={{ fontSize: 36, marginBottom: 16 }}>{c.icon}</div>
@@ -35,7 +38,12 @@ export default function FeatureExpert() {
               </div>
             ))}
           </div>
-          <div style={{ textAlign: "center", marginTop: 48 }}>
+          <div style={{ background: "#fff", borderRadius: 16, padding: 28, boxShadow: "0 2px 12px rgba(0,0,0,0.07)", marginBottom: 40 }}>
+            <div style={{ fontSize: 36, marginBottom: 16 }}>🤖</div>
+            <div style={{ fontWeight: 700, fontSize: 18, color: "#1e293b", marginBottom: 10 }}>Educational AI Specialists</div>
+            <div style={{ fontSize: 14, color: "#64748b", lineHeight: 1.7 }}>Our AI team has deployed over 10 educational AI projects, ensuring the technology accurately reflects academic standards rather than producing generic writing advice. Every output is calibrated to real committee expectations.</div>
+          </div>
+          <div style={{ textAlign: "center" }}>
             <Link href="/auth/signup" className="btn-primary">Experience Expert-Level Review →</Link>
           </div>
         </div>

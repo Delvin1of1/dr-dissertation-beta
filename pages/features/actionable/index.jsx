@@ -11,7 +11,7 @@ export default function FeatureActionable() {
         <div className="hero-badge"><span className="hero-badge-dot" />Feedback Quality</div>
         <h1>✓ <span className="highlight">Actionable</span> Feedback</h1>
         <p className="hero-sub">Specific, prioritized recommendations with page citations — not vague suggestions.</p>
-        <Link href="/auth/signup" className="btn-primary">Start Free Review →</Link>
+        <Link href="/auth/signup" className="btn-primary">Start First Review →</Link>
       </section>
       <section className="section" style={{ background: "#f8fafc" }}>
         <div style={{ maxWidth: 800, margin: "0 auto" }}>

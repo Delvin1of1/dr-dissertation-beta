@@ -11,7 +11,7 @@ export default function FeatureSecure() {
         <div className="hero-badge"><span className="hero-badge-dot" />Security</div>
         <h1>🔒 <span className="highlight">Secure &amp; Private</span></h1>
         <p className="hero-sub">Your dissertation is confidential. We take that seriously.</p>
-        <Link href="/auth/signup" className="btn-primary">Start Free Review →</Link>
+        <Link href="/auth/signup" className="btn-primary">Start First Review →</Link>
       </section>
       <section className="section" style={{ background: "#f8fafc" }}>
         <div style={{ maxWidth: 800, margin: "0 auto" }}>

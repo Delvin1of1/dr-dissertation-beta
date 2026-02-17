@@ -36,22 +36,48 @@ export default async function handler(req, res) {
 
   if (event.type === "checkout.session.completed") {
     const session = event.data.object;
-    const { userId, credits } = session.metadata || {};
-    const numCredits = parseInt(credits || "1", 10);
+    const { userId, productId, creditField } = session.metadata || {};
 
     if (userId) {
-      // Add credits to user
+      // Determine which credit columns to increment based on productId
       const { data: user } = await supabaseAdmin
         .from("users")
-        .select("credits, total_credits_purchased")
+        .select("credits, credits_quicklook_first, credits_quicklook_regular, credits_full_review, total_credits_purchased")
         .eq("id", userId)
         .single();
 
       if (user) {
-        await supabaseAdmin.from("users").update({
-          credits: (user.credits || 0) + numCredits,
-          total_credits_purchased: (user.total_credits_purchased || 0) + numCredits,
-        }).eq("id", userId);
+        const updates = {
+          total_credits_purchased: (user.total_credits_purchased || 0) + 1,
+        };
+
+        if (productId === "quicklook_first") {
+          updates.credits_quicklook_first = (user.credits_quicklook_first || 0) + 1;
+        } else if (productId === "quicklook_regular") {
+          updates.credits_quicklook_regular = (user.credits_quicklook_regular || 0) + 1;
+        } else if (productId === "full_review") {
+          // Full review grants 1 full review credit + 1 bonus quicklook regular
+          updates.credits_full_review = (user.credits_full_review || 0) + 1;
+          updates.credits_quicklook_regular = (user.credits_quicklook_regular || 0) + 1;
+          updates.total_credits_purchased = (user.total_credits_purchased || 0) + 2;
+        } else if (creditField) {
+          // Fallback: use creditField from metadata if productId unrecognized
+          updates[creditField] = (user[creditField] || 0) + 1;
+        } else {
+          // Legacy fallback: increment generic credits
+          updates.credits = (user.credits || 0) + 1;
+        }
+
+        await supabaseAdmin.from("users").update(updates).eq("id", userId);
+
+        // Record transaction
+        await supabaseAdmin.from("transactions").insert({
+          user_id: userId,
+          product_id: productId || "unknown",
+          stripe_session_id: session.id,
+          amount: session.amount_total,
+          status: "completed",
+        }).select().maybeSingle();
       }
     }
   }

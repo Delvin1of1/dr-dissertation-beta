@@ -69,14 +69,16 @@ export default function AdminPage() {
   const S = { th: { padding:"12px 14px", textAlign:"left", fontWeight:700, color:"#444", borderBottom:"1px solid #eee", whiteSpace:"nowrap" }, td: { padding:"11px 14px", borderBottom:"1px solid #f5f5f5" } };
 
   return (
-    <div style={{ minHeight:"100vh", background:"#f0f0f5", fontFamily:"'Inter',system-ui,-apple-system,sans-serif" }}>
-      <nav style={{ background:"#1a1a2e", padding:"0 32px", display:"flex", alignItems:"center", justifyContent:"space-between", height:64 }}>
-        <div style={{ display:"flex", alignItems:"center", gap:16 }}>
-          <img src="/logo-header-perfect.svg" alt="Dr. Dissertation" height={44} style={{ display:"block", filter:"brightness(0) invert(1)", maxWidth:220 }} />
-          <span style={{ color:"rgba(255,255,255,0.35)", fontSize:14, fontWeight:500 }}>/ Admin Panel</span>
+    <div style={{ minHeight:"100vh", background:"#f8f5ff", fontFamily:"'Inter',system-ui,-apple-system,sans-serif" }}>
+      <nav style={{ background:"#fff", borderBottom:"1px solid #eee", padding:"0 32px", display:"flex", alignItems:"center", justifyContent:"space-between", height:80 }}>
+        <div style={{ display:"flex", flexDirection:"column", justifyContent:"center" }}>
+          <Link href="/dashboard">
+            <img src="/logo-header-perfect.svg" alt="Dr. Dissertation" height={48} style={{ display:"block", maxWidth:240 }} />
+          </Link>
+          <div style={{ fontSize:13, fontWeight:800, color:"#6c3fc5", marginTop:4, letterSpacing:"0.01em" }}>Admin Dashboard</div>
         </div>
         <div style={{ display:"flex", gap:16, alignItems:"center" }}>
-          <Link href="/dashboard" style={{ color:"#aaa", fontSize:13, textDecoration:"none" }}>← Dashboard</Link>
+          <Link href="/dashboard" style={{ color:"#6c3fc5", fontSize:13, fontWeight:600, textDecoration:"none" }}>← Dashboard</Link>
           <button onClick={async () => { await signOut(); router.push("/auth/login"); }} style={{ color:"#e74c3c", background:"none", border:"none", cursor:"pointer", fontSize:13, fontWeight:600 }}>Sign Out</button>
         </div>
       </nav>

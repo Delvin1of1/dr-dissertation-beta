@@ -144,13 +144,18 @@ export default function DashboardPage() {
             onClick={(e) => { e.stopPropagation(); setShowDropdown(!showDropdown); }}
             style={{ background:"linear-gradient(135deg,#6c3fc5,#9b6ef3)", color:"#fff", border:"none", borderRadius:20, padding:"8px 18px", fontSize:14, fontWeight:700, cursor:"pointer" }}
           >
-            {firstName} ▾
+            My Account ▾
           </button>
           {showDropdown && (
-            <div style={{ position:"absolute", right:0, top:"calc(100% + 10px)", background:"#fff", borderRadius:14, boxShadow:"0 8px 32px rgba(0,0,0,0.14)", minWidth:180, zIndex:100, overflow:"hidden", border:"1px solid #f0f0f0" }}>
-              <Link href="/account" style={{ display:"block", padding:"13px 18px", color:"#1a1a2e", textDecoration:"none", fontSize:14, fontWeight:600, borderBottom:"1px solid #f5f5f5" }}>👤 My Account</Link>
+            <div style={{ position:"absolute", right:0, top:"calc(100% + 10px)", background:"#fff", borderRadius:14, boxShadow:"0 8px 32px rgba(0,0,0,0.14)", minWidth:220, zIndex:100, overflow:"hidden", border:"1px solid #f0f0f0" }}>
+              {/* User info header */}
+              <div style={{ padding:"14px 18px", borderBottom:"2px solid #f0ebff", background:"#faf8ff" }}>
+                <div style={{ fontWeight:700, color:"#1a1a2e", fontSize:14, marginBottom:2 }}>{profile?.full_name || firstName}</div>
+                <div style={{ fontSize:12, color:"#888", fontWeight:400 }}>{user?.email}</div>
+              </div>
+              <Link href="/account" style={{ display:"block", padding:"13px 18px", color:"#1a1a2e", textDecoration:"none", fontSize:14, fontWeight:600, borderBottom:"1px solid #f5f5f5" }}>⚙️ Account Settings</Link>
               {isAdmin && (
-                <Link href="/admin" style={{ display:"block", padding:"13px 18px", color:"#6c3fc5", textDecoration:"none", fontSize:14, fontWeight:600, borderBottom:"1px solid #f5f5f5" }}>⚙️ Admin Panel</Link>
+                <Link href="/admin" style={{ display:"block", padding:"13px 18px", color:"#6c3fc5", textDecoration:"none", fontSize:14, fontWeight:600, borderBottom:"1px solid #f5f5f5" }}>🛡️ Admin Panel</Link>
               )}
               <button onClick={async () => { await signOut(); router.push("/auth/login"); }} style={{ display:"block", width:"100%", padding:"13px 18px", color:"#e74c3c", background:"none", border:"none", textAlign:"left", fontSize:14, fontWeight:600, cursor:"pointer" }}>Sign Out</button>
             </div>

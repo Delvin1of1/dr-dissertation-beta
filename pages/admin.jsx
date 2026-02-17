@@ -70,10 +70,10 @@ export default function AdminPage() {
 
   return (
     <div style={{ minHeight:"100vh", background:"#f8f5ff", fontFamily:"'Inter',system-ui,-apple-system,sans-serif" }}>
-      <nav style={{ background:"#fff", borderBottom:"1px solid #eee", padding:"0 32px", display:"flex", alignItems:"center", justifyContent:"space-between", height:80 }}>
+      <nav style={{ background:"#fff", borderBottom:"1px solid #eee", padding:"0 32px", display:"flex", alignItems:"center", justifyContent:"space-between", height:96 }}>
         <div style={{ display:"flex", flexDirection:"column", justifyContent:"center" }}>
           <Link href="/dashboard">
-            <img src="/logo-header-perfect.svg" alt="Dr. Dissertation" height={48} style={{ display:"block", maxWidth:240 }} />
+            <img src="/logo-header-perfect.svg" alt="Dr. Dissertation" height={73} style={{ display:"block", maxWidth:365 }} />
           </Link>
           <div style={{ fontSize:13, fontWeight:800, color:"#6c3fc5", marginTop:4, letterSpacing:"0.01em" }}>Admin Dashboard</div>
         </div>

@@ -52,9 +52,9 @@ export default function AccountPage() {
   return (
     <div style={{ minHeight: "100vh", background: "#f8f5ff", fontFamily: "system-ui, -apple-system, sans-serif" }}>
       {/* Navbar */}
-      <nav style={{ background: "#fff", borderBottom: "1px solid #eee", padding: "0 24px", display: "flex", alignItems: "center", justifyContent: "space-between", height: 70 }}>
+      <nav style={{ background: "#fff", borderBottom: "1px solid #eee", padding: "0 24px", display: "flex", alignItems: "center", justifyContent: "space-between", height: 96 }}>
         <Link href="/dashboard">
-          <img src="/logo-header-perfect.svg" alt="Dr. Dissertation" height={48} style={{ display: "block", maxWidth: 240 }} />
+          <img src="/logo-header-perfect.svg" alt="Dr. Dissertation" height={73} style={{ display: "block", maxWidth: 365 }} />
         </Link>
         <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
           <div style={{ background: "#f0ebff", color: "#6c3fc5", borderRadius: 20, padding: "4px 14px", fontSize: 13, fontWeight: 700 }}>

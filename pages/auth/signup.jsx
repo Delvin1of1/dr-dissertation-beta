@@ -59,7 +59,7 @@ export default function SignupPage() {
     <div style={styles.page}>
       <div style={styles.card}>
         <div style={styles.header}>
-          <img src="/logo-header-perfect.svg" alt="Dr. Dissertation" style={{ height: 54, maxWidth: 260, marginBottom: 16 }} />
+          <img src="/logo-header-perfect.svg" alt="Dr. Dissertation" style={{ height: 68, maxWidth: 340, marginBottom: 16 }} />
           <p style={styles.sub}>Create your free account</p>
         </div>
 

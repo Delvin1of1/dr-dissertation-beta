@@ -118,7 +118,7 @@ export default function DashboardPage() {
   if (loading) {
     return (
       <div style={{ minHeight:"100vh", display:"flex", flexDirection:"column", alignItems:"center", justifyContent:"center", background:"#f8f5ff" }}>
-        <img src="/logo-header-perfect.svg" alt="Dr. Dissertation" height={60} style={{ marginBottom:20, maxWidth:300 }} />
+        <img src="/logo-header-perfect.svg" alt="Dr. Dissertation" height={73} style={{ marginBottom:20, maxWidth:365 }} />
         <p style={{ color:"#6c3fc5" }}>Loading…</p>
       </div>
     );
@@ -136,9 +136,9 @@ export default function DashboardPage() {
     <div style={{ minHeight:"100vh", background:"#f8f5ff", fontFamily:"'Inter', system-ui, -apple-system, sans-serif" }}>
 
       {/* NAVBAR */}
-      <nav style={{ background:"#fff", borderBottom:"1px solid #eee", padding:"0 32px", display:"flex", alignItems:"center", justifyContent:"space-between", height:80, position:"sticky", top:0, zIndex:50 }}>
+      <nav style={{ background:"#fff", borderBottom:"1px solid #eee", padding:"0 32px", display:"flex", alignItems:"center", justifyContent:"space-between", height:96, position:"sticky", top:0, zIndex:50 }}>
         <Link href="/">
-          <img src="/logo-header-perfect.svg" alt="Dr. Dissertation" height={58} style={{ display:"block", maxWidth:290 }} />
+          <img src="/logo-header-perfect.svg" alt="Dr. Dissertation" height={73} style={{ display:"block", maxWidth:365 }} />
         </Link>
         <div id="acct-dd" style={{ position:"relative" }}>
           <button

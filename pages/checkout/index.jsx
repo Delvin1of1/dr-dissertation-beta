@@ -39,7 +39,7 @@ export default function CheckoutPage() {
         <p className="hero-sub">Choose the review that fits your needs. No subscription required.</p>
       </section>
       <section className="section" style={{ background: "#f8fafc", paddingTop: 40 }}>
-        <div className="pricing-grid" style={{ maxWidth: 960, margin: "0 auto 40px" }}>
+        <div className="pricing-grid" style={{ maxWidth: 1200, margin: "0 auto 40px" }}>
           {PRODUCTS.map(p => (
             <div key={p.id} className={`pricing-card${p.featured ? " featured" : ""}`} style={{ position: "relative" }}>
               {p.badge && <div className="pricing-badge">{p.badge}</div>}

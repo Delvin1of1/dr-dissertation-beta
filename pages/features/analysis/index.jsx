@@ -82,7 +82,7 @@ export default function FeatureAnalysis() {
             <div style={{ fontSize: 13, fontWeight: 600, opacity: 0.8, letterSpacing: "0.1em", textTransform: "uppercase", marginBottom: 12 }}>Framework Creators</div>
             <div style={{ fontSize: 24, fontWeight: 800, marginBottom: 12 }}>John C. Chick, Ed.D. &amp; Laura Morello, Ed.D.</div>
             <p style={{ fontSize: 15, opacity: 0.9, lineHeight: 1.7, maxWidth: 620, margin: "0 auto 28px" }}>
-              The HAIST© methodology was developed from over 2,000 dissertation reviews and 15+ years of experience
+              The HAIST© methodology was developed from hundreds of dissertation reviews and 10+ years of experience
               chairing doctoral committees. It represents the gold standard for comprehensive dissertation evaluation.
             </p>
             <Link href="/auth/signup" style={{ display: "inline-block", background: "#fff", color: "#6366F1", borderRadius: 10, padding: "13px 30px", fontSize: 15, fontWeight: 700, textDecoration: "none" }}>

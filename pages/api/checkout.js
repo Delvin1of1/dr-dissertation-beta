@@ -32,6 +32,13 @@ const PRODUCTS = {
     creditField: "credits_full_review",
     credits: 2,   // grants full_review credit + quicklook bonus
   },
+  iterative_pack: {
+    name: "Iterative Review Pack",
+    description: "3 Full HAIST© Reviews · 3 QuickLook Reviews · Complete dissertation journey · Best value for the process",
+    amount: 9999,  // $99.99
+    creditField: "credits_full_review",
+    credits: 6,   // 3 full reviews + 3 quicklook regulars
+  },
 };
 
 export default async function handler(req, res) {

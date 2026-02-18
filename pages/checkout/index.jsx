@@ -10,6 +10,7 @@ const PRODUCTS = [
   { id: "quicklook_first", name: "First-Time QuickLook", price: "$9.99", desc: "Perfect for your first review", features: ["~10 min turnaround", "Top 5 critical dimensions", "Defense blockers identified", "Professional Word document"], badge: "Best for First-Timers", credits: 1 },
   { id: "quicklook_regular", name: "QuickLook Review", price: "$29.99", desc: "The most popular choice", features: ["~10 min turnaround", "All HAIST© dimensions", "Page-specific citations", "Detailed recommendations", "Priority support"], badge: "Most Popular", featured: true, credits: 1 },
   { id: "full_review", name: "Full Review", price: "$49.99", desc: "+ 1 QuickLook bonus credit", features: ["All 10 HAIST© dimensions", "Comprehensive analysis", "Within 3 business days", "Bonus QuickLook credit", "Expert consultation available"], credits: 2 },
+  { id: "iterative_pack", name: "Iterative Review Pack", price: "$99.99", desc: "3 Full Reviews + 3 QuickLooks", features: ["3 Full HAIST© Reviews", "3 QuickLook Reviews", "Complete dissertation journey", "Best value for the process", "Expert consultation available"], badge: "Best Value", credits: 6 },
 ];
 
 export default function CheckoutPage() {

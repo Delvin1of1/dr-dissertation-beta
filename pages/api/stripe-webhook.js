@@ -60,6 +60,11 @@ export default async function handler(req, res) {
           updates.credits_full_review = (user.credits_full_review || 0) + 1;
           updates.credits_quicklook_regular = (user.credits_quicklook_regular || 0) + 1;
           updates.total_credits_purchased = (user.total_credits_purchased || 0) + 2;
+        } else if (productId === "iterative_pack") {
+          // Iterative Pack: 3 full reviews + 3 quicklook regulars
+          updates.credits_full_review = (user.credits_full_review || 0) + 3;
+          updates.credits_quicklook_regular = (user.credits_quicklook_regular || 0) + 3;
+          updates.total_credits_purchased = (user.total_credits_purchased || 0) + 6;
         } else if (creditField) {
           // Fallback: use creditField from metadata if productId unrecognized
           updates[creditField] = (user[creditField] || 0) + 1;

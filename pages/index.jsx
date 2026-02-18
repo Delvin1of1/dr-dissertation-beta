@@ -101,6 +101,22 @@ export default function HomePage() {
             </ul>
             <Link href="/checkout" className="pricing-cta secondary">Get Started →</Link>
           </div>
+
+          {/* Iterative Pack */}
+          <div className="pricing-card" style={{ position: "relative" }}>
+            <div className="pricing-badge" style={{ background: "#10b981", position: "absolute", top: -14, left: "50%", transform: "translateX(-50%)", color: "#fff", padding: "4px 16px", borderRadius: 999, fontSize: 12, fontWeight: 700, whiteSpace: "nowrap" }}>Best Value</div>
+            <div className="pricing-name">Iterative Review Pack</div>
+            <div className="pricing-price">$99.99 <span>/ pack</span></div>
+            <div className="pricing-sub">3 Full Reviews + 3 QuickLooks</div>
+            <ul className="pricing-features">
+              <li>3 Full HAIST© Reviews</li>
+              <li>3 QuickLook Reviews</li>
+              <li>Complete dissertation journey</li>
+              <li>Best value for the process</li>
+              <li>Expert consultation available</li>
+            </ul>
+            <Link href="/checkout" className="pricing-cta secondary">Get Started →</Link>
+          </div>
         </div>
         <p style={{ textAlign: "center", color: "#64748b", fontSize: 14 }}>
           Institutions: Need site licenses or custom solutions?{" "}

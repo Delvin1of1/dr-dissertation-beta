@@ -5,7 +5,7 @@ import Link from "next/link";
 import { supabase } from "../lib/supabase";
 import { signOut } from "../lib/auth-helpers";
 
-const ADMIN_EMAIL = "jchick@bridgeport.edu";
+const ADMIN_EMAIL = process.env.NEXT_PUBLIC_ADMIN_EMAIL;
 
 export default function AdminPage() {
   const router = useRouter();

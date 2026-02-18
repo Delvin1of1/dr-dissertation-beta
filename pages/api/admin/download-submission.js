@@ -9,7 +9,7 @@ const supabaseAdmin = createClient(
   process.env.SUPABASE_SERVICE_KEY
 );
 
-const ADMIN_EMAIL = "jchick@bridgeport.edu";
+const ADMIN_EMAIL = process.env.ADMIN_EMAIL;
 
 export default async function handler(req, res) {
   if (req.method !== "GET") return res.status(405).json({ error: "Method not allowed" });

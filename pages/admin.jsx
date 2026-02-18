@@ -121,7 +121,8 @@ export default function AdminPage() {
         <div style={{ display:"flex", gap:8, marginBottom:16, flexWrap:"wrap" }}>
           {[
             { key:"users", label:`👥 Users (${users.length})` },
-            { key:"reviews", label:`📄 Reviews (${reviews.length})` },
+            { key:"fullreviews", label:`📋 Full Review Submissions (${reviews.filter(r=>r.review_type==="full_review_pending").length})` },
+            { key:"reviews", label:`📄 All Reviews (${reviews.length})` },
             { key:"transactions", label:`💳 Transactions (${transactions.length})` },
             { key:"mailing", label:`📬 Mailing List (${mailingList.length})` },
           ].map(t => (
@@ -154,6 +155,51 @@ export default function AdminPage() {
             </table>
           </div>
         )}
+
+        {tab === "fullreviews" && (() => {
+          const pending = reviews.filter(r => r.review_type === "full_review_pending");
+          return (
+            <div style={{ background:"#fff", borderRadius:14, overflow:"auto", boxShadow:"0 2px 8px rgba(0,0,0,0.06)" }}>
+              {pending.length === 0 ? (
+                <div style={{ padding:"40px", textAlign:"center", color:"#aaa", fontSize:14 }}>No full review submissions yet.</div>
+              ) : (
+                <table style={{ width:"100%", borderCollapse:"collapse", fontSize:13 }}>
+                  <thead><tr style={{ background:"#f8f5ff" }}>
+                    {["File","Type","User","Submitted","Status","Download"].map(h => <th key={h} style={S.th}>{h}</th>)}
+                  </tr></thead>
+                  <tbody>
+                    {pending.map(r => {
+                      const owner = users.find(u => u.id === r.user_id);
+                      const downloadUrl = r.storage_path
+                        ? `${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/authenticated/dissertation-pdfs/${r.storage_path}`
+                        : null;
+                      return (
+                        <tr key={r.id}>
+                          <td style={{ ...S.td, fontWeight:600, color:"#1a1a2e" }}>{r.file_name}</td>
+                          <td style={S.td}><span style={{ background:"#f0ebff", color:"#6c3fc5", borderRadius:6, padding:"3px 10px", fontSize:12, fontWeight:700 }}>{r.document_type === "proposal" ? "Proposal" : "Full Dissertation"}</span></td>
+                          <td style={{ ...S.td, color:"#555" }}>{owner?.email || r.user_id?.slice(0,8)+"…"}</td>
+                          <td style={{ ...S.td, color:"#999" }}>{new Date(r.created_at).toLocaleDateString()}</td>
+                          <td style={S.td}><span style={{ background: r.status==="pending"?"#fef9c3":"#dcfce7", color: r.status==="pending"?"#854d0e":"#166534", borderRadius:6, padding:"3px 10px", fontSize:12, fontWeight:700 }}>{r.status||"pending"}</span></td>
+                          <td style={S.td}>
+                            {r.storage_path ? (
+                              <a
+                                href={`/api/admin/download-submission?path=${encodeURIComponent(r.storage_path)}`}
+                                style={{ background:"#6c3fc5", color:"#fff", borderRadius:6, padding:"5px 14px", fontSize:12, fontWeight:700, textDecoration:"none", display:"inline-block" }}
+                                target="_blank" rel="noreferrer"
+                              >
+                                Download PDF
+                              </a>
+                            ) : "—"}
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              )}
+            </div>
+          );
+        })()}
 
         {tab === "reviews" && (
           <div style={{ background:"#fff", borderRadius:14, overflow:"auto", boxShadow:"0 2px 8px rgba(0,0,0,0.06)" }}>

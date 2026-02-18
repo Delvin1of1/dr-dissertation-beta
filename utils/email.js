@@ -105,6 +105,28 @@ export async function sendReviewCompletionEmail({ to, firstName, reviewTitle }) 
   return sendEmail({ to, subject, html, text });
 }
 
+export async function sendFullReviewNotificationEmail({ userEmail, userName, fileName, documentType, submissionId }) {
+  const subject = `📋 New Full Review Submission — ${fileName}`;
+  const typeLabel = documentType === "proposal" ? "Proposal (Chapters 1–3)" : "Full Dissertation (Chapters 1–5)";
+  const html = `
+<!DOCTYPE html><html><body style="font-family:sans-serif;padding:24px;background:#f5f5f5;">
+  <div style="max-width:600px;margin:0 auto;background:#fff;border-radius:16px;padding:32px;box-shadow:0 2px 12px rgba(0,0,0,0.08);">
+    <div style="background:linear-gradient(135deg,#6c3fc5,#9b6ef3);border-radius:10px;padding:20px 24px;margin-bottom:24px;">
+      <h2 style="color:#fff;margin:0;font-size:20px;">New Full Review Submission</h2>
+    </div>
+    <p style="color:#555;font-size:15px;margin:0 0 16px;"><strong>From:</strong> ${userName || userEmail} (${userEmail})</p>
+    <p style="color:#555;font-size:15px;margin:0 0 8px;"><strong>File:</strong> ${fileName}</p>
+    <p style="color:#555;font-size:15px;margin:0 0 24px;"><strong>Type:</strong> ${typeLabel}</p>
+    <a href="https://www.doctordissertation.com/admin" style="background:linear-gradient(135deg,#6c3fc5,#9b6ef3);color:#fff;text-decoration:none;padding:12px 28px;border-radius:10px;font-weight:700;font-size:15px;display:inline-block;">
+      View in Admin Panel →
+    </a>
+    <p style="color:#aaa;font-size:12px;margin:24px 0 0;">Submission ID: ${submissionId}</p>
+  </div>
+</body></html>`;
+  const text = `New Full Review Submission\n\nFrom: ${userName || userEmail} (${userEmail})\nFile: ${fileName}\nType: ${typeLabel}\n\nView in admin: https://www.doctordissertation.com/admin\nSubmission ID: ${submissionId}`;
+  return sendEmail({ to: "jchick@bridgeport.edu", subject, html, text });
+}
+
 export async function sendContactEmail({ name, email, message }) {
   const subject = `Contact Form: Message from ${name}`;
   const html = `

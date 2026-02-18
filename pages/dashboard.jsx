@@ -25,6 +25,9 @@ export default function DashboardPage() {
   const [showPromo, setShowPromo] = useState(false);
   const [pastReviews, setPastReviews] = useState([]);
   const [expandedReview, setExpandedReview] = useState(null);
+  const [reviewMode, setReviewMode] = useState("quicklook"); // "quicklook" | "full_review"
+  const [fullReviewSubmitting, setFullReviewSubmitting] = useState(false);
+  const [fullReviewSuccess, setFullReviewSuccess] = useState(false);
 
   useEffect(() => {
     async function init() {
@@ -109,6 +112,33 @@ export default function DashboardPage() {
         ? "The AI service is busy right now. Please wait 30 seconds and try again." : msg);
     } finally {
       setReviewing(false);
+    }
+  }
+
+  async function submitFullReview() {
+    setReviewError(""); setFullReviewSuccess(false);
+    if (!selectedFile) { setReviewError("Please select a PDF first."); return; }
+    setFullReviewSubmitting(true);
+    try {
+      const fileContent = await new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => resolve(reader.result);
+        reader.onerror = reject;
+        reader.readAsDataURL(selectedFile);
+      });
+      const res = await fetch("/api/submit-full-review", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ userId: user.id, fileName: selectedFile.name, documentType: docType, fileContent }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(data?.error || "Submission failed");
+      setFullReviewSuccess(true);
+      await refreshProfile();
+    } catch (e) {
+      setReviewError(e.message || "Something went wrong. Please try again.");
+    } finally {
+      setFullReviewSubmitting(false);
     }
   }
 
@@ -235,43 +265,90 @@ export default function DashboardPage() {
 
           {/* RIGHT — New Review card */}
           <div style={{ background:"#fff", borderRadius:20, padding:"28px", boxShadow:"0 2px 16px rgba(0,0,0,0.07)", height:"100%", boxSizing:"border-box" }}>
-            <h2 style={{ fontSize:20, fontWeight:800, color:"#1a1a2e", margin:"0 0 20px" }}>New Review</h2>
+            <h2 style={{ fontSize:20, fontWeight:800, color:"#1a1a2e", margin:"0 0 16px" }}>New Review</h2>
 
-            <FileUpload onFileSelect={(f) => { setSelectedFile(f); setReview(""); setReviewError(""); }} />
+            {/* QuickLook / Full Review toggle */}
+            <div style={{ display:"flex", background:"#f0ebff", borderRadius:12, padding:4, marginBottom:20 }}>
+              <button
+                onClick={() => { setReviewMode("quicklook"); setReview(""); setReviewError(""); setFullReviewSuccess(false); }}
+                style={{ flex:1, padding:"9px 0", borderRadius:9, border:"none", fontWeight:700, fontSize:14, cursor:"pointer", background: reviewMode === "quicklook" ? "#6c3fc5" : "transparent", color: reviewMode === "quicklook" ? "#fff" : "#6c3fc5", transition:"all 0.15s" }}
+              >
+                ⚡ QuickLook
+              </button>
+              <button
+                onClick={() => { setReviewMode("full_review"); setReview(""); setReviewError(""); setFullReviewSuccess(false); }}
+                style={{ flex:1, padding:"9px 0", borderRadius:9, border:"none", fontWeight:700, fontSize:14, cursor:"pointer", background: reviewMode === "full_review" ? "#6c3fc5" : "transparent", color: reviewMode === "full_review" ? "#fff" : "#6c3fc5", transition:"all 0.15s" }}
+              >
+                📊 Full Review
+              </button>
+            </div>
+
+            {/* Mode description */}
+            {reviewMode === "quicklook" ? (
+              <p style={{ fontSize:13, color:"#888", margin:"0 0 16px", lineHeight:1.5 }}>
+                AI-powered review in ~10 minutes. Identifies critical issues across all HAIST© dimensions.
+              </p>
+            ) : (
+              <p style={{ fontSize:13, color:"#888", margin:"0 0 16px", lineHeight:1.5 }}>
+                Submit your PDF for an expert human review by Dr. Chick. You'll be notified by email when it's ready — typically within 3 business days.
+              </p>
+            )}
+
+            <FileUpload onFileSelect={(f) => { setSelectedFile(f); setReview(""); setReviewError(""); setFullReviewSuccess(false); }} />
 
             <div style={{ marginTop:20, display:"flex", gap:24, flexWrap:"wrap", justifyContent:"center" }}>
               <label style={{ display:"flex", alignItems:"center", gap:8, fontSize:14, color:"#444", cursor:"pointer", fontWeight:500 }}>
-                <input type="radio" name="doctype" checked={docType === "proposal"} onChange={() => setDocType("proposal")} disabled={reviewing} />
+                <input type="radio" name="doctype" checked={docType === "proposal"} onChange={() => setDocType("proposal")} disabled={reviewing || fullReviewSubmitting} />
                 Proposal (Chapters 1–3)
               </label>
               <label style={{ display:"flex", alignItems:"center", gap:8, fontSize:14, color:"#444", cursor:"pointer", fontWeight:500 }}>
-                <input type="radio" name="doctype" checked={docType === "full"} onChange={() => setDocType("full")} disabled={reviewing} />
+                <input type="radio" name="doctype" checked={docType === "full"} onChange={() => setDocType("full")} disabled={reviewing || fullReviewSubmitting} />
                 Full Dissertation (Chapters 1–5)
               </label>
             </div>
 
-            <div style={{ marginTop:20, display:"flex", gap:12 }}>
-              <button
-                onClick={generateReview}
-                disabled={reviewing || !selectedFile || totalCredits === 0}
-                style={{ flex:1, background:"linear-gradient(135deg,#6c3fc5,#9b6ef3)", color:"#fff", border:"none", borderRadius:12, padding:"13px 0", fontSize:15, fontWeight:700, cursor:"pointer", opacity:(reviewing || !selectedFile || totalCredits === 0) ? 0.6 : 1 }}
-              >
-                {reviewing ? "Generating…" : "Get My Review →"}
-              </button>
-              <button
-                onClick={() => downloadDocx(review, selectedFile?.name)}
-                disabled={!review}
-                style={{ flex:1, background:"#f0ebff", color:"#6c3fc5", border:"none", borderRadius:12, padding:"13px 0", fontSize:15, fontWeight:700, cursor:"pointer", opacity:!review ? 0.5 : 1 }}
-              >
-                Download .docx
-              </button>
-            </div>
+            {/* Action buttons */}
+            {reviewMode === "quicklook" ? (
+              <div style={{ marginTop:20, display:"flex", gap:12 }}>
+                <button
+                  onClick={generateReview}
+                  disabled={reviewing || !selectedFile || totalCredits === 0}
+                  style={{ flex:1, background:"linear-gradient(135deg,#6c3fc5,#9b6ef3)", color:"#fff", border:"none", borderRadius:12, padding:"13px 0", fontSize:15, fontWeight:700, cursor:"pointer", opacity:(reviewing || !selectedFile || totalCredits === 0) ? 0.6 : 1 }}
+                >
+                  {reviewing ? "Generating…" : "Get My Review →"}
+                </button>
+                <button
+                  onClick={() => downloadDocx(review, selectedFile?.name)}
+                  disabled={!review}
+                  style={{ flex:1, background:"#f0ebff", color:"#6c3fc5", border:"none", borderRadius:12, padding:"13px 0", fontSize:15, fontWeight:700, cursor:"pointer", opacity:!review ? 0.5 : 1 }}
+                >
+                  Download .docx
+                </button>
+              </div>
+            ) : (
+              <div style={{ marginTop:20 }}>
+                <button
+                  onClick={submitFullReview}
+                  disabled={fullReviewSubmitting || !selectedFile || totalCredits === 0}
+                  style={{ width:"100%", background:"linear-gradient(135deg,#6c3fc5,#9b6ef3)", color:"#fff", border:"none", borderRadius:12, padding:"13px 0", fontSize:15, fontWeight:700, cursor:"pointer", opacity:(fullReviewSubmitting || !selectedFile || totalCredits === 0) ? 0.6 : 1 }}
+                >
+                  {fullReviewSubmitting ? "Submitting…" : "Submit for Expert Review →"}
+                </button>
+              </div>
+            )}
 
             {reviewing && (
               <div style={{ marginTop:18, background:"#f8f5ff", borderRadius:12, padding:"16px 20px", borderLeft:"4px solid #6c3fc5" }}>
                 <div style={{ fontWeight:800, color:"#1a1a2e", marginBottom:4 }}>In progress…</div>
                 {statusMsg && <div style={{ color:"#6c3fc5", fontSize:14, fontWeight:600 }}>{statusMsg}</div>}
                 <div style={{ color:"#999", fontSize:12, marginTop:6 }}>Long dissertations take 2–5 minutes.</div>
+              </div>
+            )}
+
+            {fullReviewSuccess && (
+              <div style={{ marginTop:18, background:"#f0fff4", border:"1px solid #a7f3d0", borderRadius:12, padding:"16px 20px" }}>
+                <div style={{ fontWeight:800, color:"#065f46", marginBottom:4 }}>✅ Submitted successfully!</div>
+                <div style={{ color:"#047857", fontSize:14 }}>Dr. Chick will review your manuscript and reach out within 3 business days.</div>
               </div>
             )}
 

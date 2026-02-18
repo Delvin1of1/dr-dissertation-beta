@@ -109,7 +109,7 @@ export default function SignupPage() {
               onChange={(e) => setMailingList(e.target.checked)}
               style={{ marginRight: 8 }}
             />
-            Subscribe to updates &amp; tips from Dr. Chick
+            Subscribe to updates &amp; tips from Dr. Dissertation
           </label>
 
           {error && <div style={styles.error}>{error}</div>}

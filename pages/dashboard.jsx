@@ -195,10 +195,10 @@ export default function DashboardPage() {
         )}
 
         {/* 2-COLUMN LAYOUT: Credit tiles left, New Review right */}
-        <div style={{ display:"grid", gridTemplateColumns:"220px 1fr", gap:16, alignItems:"start" }}>
+        <div style={{ display:"grid", gridTemplateColumns:"220px 1fr", gap:16, alignItems:"stretch" }}>
 
           {/* LEFT — 2 credit tiles stacked */}
-          <div style={{ display:"flex", flexDirection:"column", gap:16 }}>
+          <div style={{ display:"flex", flexDirection:"column", gap:16, height:"100%" }}>
 
             {/* QuickLook tile (combined) */}
             <div style={{ background:"linear-gradient(135deg,#6c3fc5,#9b6ef3)", borderRadius:18, padding:"24px 20px", boxShadow:"0 4px 24px rgba(108,63,197,0.30)", textAlign:"center" }}>
@@ -210,7 +210,7 @@ export default function DashboardPage() {
             </div>
 
             {/* Full Review tile */}
-            <div style={{ background:"#fff", borderRadius:18, padding:"24px 20px", boxShadow:"0 2px 16px rgba(0,0,0,0.07)", textAlign:"center" }}>
+            <div style={{ background:"#fff", borderRadius:18, padding:"24px 20px", boxShadow:"0 2px 16px rgba(0,0,0,0.07)", textAlign:"center", flex:1, display:"flex", flexDirection:"column", justifyContent:"center" }}>
               <div style={{ fontSize:26, marginBottom:6 }}>📊</div>
               <div style={{ fontSize:10, fontWeight:700, color:"#999", textTransform:"uppercase", letterSpacing:"0.08em", marginBottom:4 }}>Full Review</div>
               <div style={{ fontSize:52, fontWeight:900, color:"#1a1a2e", lineHeight:1 }}>{full}</div>
@@ -221,7 +221,7 @@ export default function DashboardPage() {
           </div>
 
           {/* RIGHT — New Review card */}
-          <div style={{ background:"#fff", borderRadius:20, padding:"28px", boxShadow:"0 2px 16px rgba(0,0,0,0.07)" }}>
+          <div style={{ background:"#fff", borderRadius:20, padding:"28px", boxShadow:"0 2px 16px rgba(0,0,0,0.07)", height:"100%", boxSizing:"border-box" }}>
             <h2 style={{ fontSize:20, fontWeight:800, color:"#1a1a2e", margin:"0 0 20px" }}>New Review</h2>
 
             <FileUpload onFileSelect={(f) => { setSelectedFile(f); setReview(""); setReviewError(""); }} />

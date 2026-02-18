@@ -16,7 +16,7 @@ export default function FeatureFast() {
       <section className="section">
         <div style={{ maxWidth: 800, margin: "0 auto" }}>
           <h2 className="section-title">How We Achieve Lightning Speed</h2>
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(220px,1fr))", gap: 24, marginTop: 48 }}>
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(2,1fr)", gap: 24, marginTop: 48 }}>
             {[
               { step: "1", title: "Intelligent Chunking", desc: "Your document is split into optimized sections for parallel processing — no waiting for one big analysis." },
               { step: "2", title: "Parallel Analysis", desc: "Each section is analyzed simultaneously using advanced AI, dramatically cutting processing time." },

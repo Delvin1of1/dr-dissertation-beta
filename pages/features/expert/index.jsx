@@ -28,7 +28,7 @@ export default function FeatureExpert() {
           </div>
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 24, marginBottom: 40 }}>
             {[
-              { title: "John C. Chick, Ed.D.", desc: "Dr. Chick has chaired hundreds of dissertation committees and spent 15+ years identifying the patterns that cause defenses to fail. He co-developed the HAIST© framework to bring that expertise to every doctoral student.", icon: "🎓" },
+              { title: "John C. Chick, Ed.D.", desc: "Dr. Chick has chaired dozens of dissertation committees and spent 10+ years researching and identifying the reasons manuscripts and dissertations fail defense and publication — and why the process can be unnecessarily long. He co-developed the HAIST© framework to bring that expertise to every doctoral student.", icon: "🎓" },
               { title: "Laura Morello, Ed.D.", desc: "Dr. Morello brings deep expertise in educational research methodology and academic standards across disciplines. Her insights inform HAIST©'s rigorous approach to evaluating scholarly contribution and writing quality.", icon: "🎓" },
             ].map(c => (
               <div key={c.title} style={{ background: "#fff", borderRadius: 16, padding: 28, boxShadow: "0 2px 12px rgba(0,0,0,0.07)" }}>

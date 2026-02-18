@@ -47,7 +47,11 @@ export default function AccountPage() {
   if (loading) return <div style={{ minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center" }}><p>Loading…</p></div>;
 
   const firstName = profile?.full_name?.split(" ")[0] || user?.email?.split("@")[0] || "there";
-  const credits = profile?.credits ?? 0;
+  const qlFirst = profile?.credits_quicklook_first ?? (profile?.credits ?? 0);
+  const qlReg   = profile?.credits_quicklook_regular ?? 0;
+  const ql      = qlFirst + qlReg;
+  const full    = profile?.credits_full_review ?? 0;
+  const totalCredits = ql + full;
 
   return (
     <div style={{ minHeight: "100vh", background: "#f8f5ff", fontFamily: "system-ui, -apple-system, sans-serif" }}>
@@ -58,7 +62,7 @@ export default function AccountPage() {
         </Link>
         <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
           <div style={{ background: "#f0ebff", color: "#6c3fc5", borderRadius: 20, padding: "4px 14px", fontSize: 13, fontWeight: 700 }}>
-            {credits} credit{credits !== 1 ? "s" : ""}
+            {totalCredits} credit{totalCredits !== 1 ? "s" : ""}
           </div>
           <div style={{ position: "relative" }}>
             <button onClick={() => setShowDropdown(!showDropdown)} style={{ background: "linear-gradient(135deg,#6c3fc5,#9b6ef3)", color: "#fff", border: "none", borderRadius: 20, padding: "6px 16px", fontSize: 13, fontWeight: 700, cursor: "pointer" }}>
@@ -92,11 +96,20 @@ export default function AccountPage() {
             </div>
             <div>
               <label style={{ fontSize: 13, fontWeight: 600, color: "#444", display: "block", marginBottom: 6 }}>Credits Remaining</label>
-              <div style={{ padding: "11px 14px", background: "#f8f5ff", borderRadius: 10, fontWeight: 700, color: "#6c3fc5", fontSize: 15 }}>{credits}</div>
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
+                <div style={{ padding: "11px 14px", background: "#f8f5ff", borderRadius: 10, textAlign: "center" }}>
+                  <div style={{ fontWeight: 800, fontSize: 20, color: "#6c3fc5" }}>{ql}</div>
+                  <div style={{ fontSize: 12, color: "#888", marginTop: 2 }}>QuickLook</div>
+                </div>
+                <div style={{ padding: "11px 14px", background: "#f8f5ff", borderRadius: 10, textAlign: "center" }}>
+                  <div style={{ fontWeight: 800, fontSize: 20, color: "#6c3fc5" }}>{full}</div>
+                  <div style={{ fontSize: 12, color: "#888", marginTop: 2 }}>Full Review</div>
+                </div>
+              </div>
             </div>
             <label style={{ display: "flex", alignItems: "center", gap: 10, fontSize: 14, cursor: "pointer", color: "#555" }}>
               <input type="checkbox" checked={mailingList} onChange={(e) => setMailingList(e.target.checked)} />
-              Receive updates &amp; tips from Dr. Chick
+              Receive updates &amp; tips from Dr. Dissertation
             </label>
 
             {message && <div style={{ background: message.includes("Error") ? "#fff0f0" : "#f0fff4", color: message.includes("Error") ? "#c0392b" : "#27ae60", padding: "10px 14px", borderRadius: 8, fontSize: 14 }}>{message}</div>}

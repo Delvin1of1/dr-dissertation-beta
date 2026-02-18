@@ -7,7 +7,7 @@ export default function Footer() {
     <footer className="footer">
       <div className="footer-grid">
         <div>
-          <div className="footer-brand-name">Dr. Dissertation</div>
+          <img src="/logo-header-footer.svg" alt="Dr. Dissertation" height={73} style={{ display: "block", maxWidth: 365, marginBottom: 16 }} />
           <p className="footer-brand-desc">
             AI-powered dissertation review using the HAIST© methodology. Get expert feedback in minutes, not weeks.
           </p>

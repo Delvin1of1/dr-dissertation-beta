@@ -71,7 +71,7 @@ export default function ContactPage() {
             {[
               { label: "General Support", email: "support@doctordissertation.com" },
               { label: "Partnerships", email: "partnerships@doctordissertation.com" },
-              { label: "Dr. Chick Directly", email: "drchick@doctordissertation.com" },
+              { label: "Dr. Dissertation Directly", email: "drchick@doctordissertation.com" },
               { label: "Reviews", email: "reviews@doctordissertation.com" },
             ].map(c => (
               <div key={c.label} style={{ background: "#fff", borderRadius: 14, padding: "20px 20px", boxShadow: "0 2px 8px rgba(0,0,0,0.06)" }}>

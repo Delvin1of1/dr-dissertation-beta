@@ -23,6 +23,8 @@ export default function DashboardPage() {
   const [reviewError, setReviewError] = useState("");
   const [showDropdown, setShowDropdown] = useState(false);
   const [showPromo, setShowPromo] = useState(false);
+  const [pastReviews, setPastReviews] = useState([]);
+  const [expandedReview, setExpandedReview] = useState(null);
 
   useEffect(() => {
     async function init() {
@@ -31,6 +33,12 @@ export default function DashboardPage() {
       setUser(session.user);
       const { data: prof } = await supabase.from("users").select("*").eq("id", session.user.id).single();
       setProfile(prof);
+      const { data: reviews } = await supabase
+        .from("reviews")
+        .select("id, file_name, document_type, review_text, created_at")
+        .eq("user_id", session.user.id)
+        .order("created_at", { ascending: false });
+      setPastReviews(reviews || []);
       setLoading(false);
     }
     init();
@@ -86,9 +94,14 @@ export default function DashboardPage() {
       const finalData = await callApi({ action: "final", fileContent, fileName, documentType: docType, chunkNotes });
 
       await fetch("/api/deduct-credit", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ userId: user.id }) });
-      await supabase.from("reviews").insert({ user_id: user.id, file_name: fileName, document_type: docType, review_text: finalData.review });
+      const { data: newReview } = await supabase
+        .from("reviews")
+        .insert({ user_id: user.id, file_name: fileName, document_type: docType, review_text: finalData.review })
+        .select()
+        .single();
       setReview(finalData.review);
       setStatusMsg("");
+      if (newReview) setPastReviews((prev) => [newReview, ...prev]);
       await refreshProfile();
     } catch (e) {
       const msg = e?.message || "Something went wrong. Please try again.";
@@ -281,6 +294,58 @@ export default function DashboardPage() {
             )}
           </div>
 
+        </div>
+
+        {/* YOUR REVIEWS */}
+        <div style={{ marginTop:32 }}>
+          <h2 style={{ fontSize:20, fontWeight:800, color:"#1a1a2e", margin:"0 0 16px" }}>Your Reviews</h2>
+
+          {pastReviews.length === 0 ? (
+            <div style={{ background:"#fff", borderRadius:16, padding:"32px", boxShadow:"0 2px 12px rgba(0,0,0,0.06)", textAlign:"center", color:"#999", fontSize:14 }}>
+              No reviews yet — submit your first one above!
+            </div>
+          ) : (
+            <div style={{ display:"flex", flexDirection:"column", gap:12 }}>
+              {pastReviews.map((r) => {
+                const isOpen = expandedReview === r.id;
+                const date = new Date(r.created_at).toLocaleDateString("en-US", { year:"numeric", month:"short", day:"numeric" });
+                const typeLabel = r.document_type === "proposal" ? "Proposal" : "Full Dissertation";
+                const fileName = r.file_name || "Untitled";
+                return (
+                  <div key={r.id} style={{ background:"#fff", borderRadius:16, boxShadow:"0 2px 12px rgba(0,0,0,0.06)", overflow:"hidden" }}>
+                    {/* Row header */}
+                    <div
+                      onClick={() => setExpandedReview(isOpen ? null : r.id)}
+                      style={{ display:"flex", alignItems:"center", justifyContent:"space-between", padding:"16px 20px", cursor:"pointer", userSelect:"none" }}
+                    >
+                      <div style={{ display:"flex", alignItems:"center", gap:14 }}>
+                        <div style={{ width:36, height:36, borderRadius:10, background:"#f0ebff", display:"flex", alignItems:"center", justifyContent:"center", fontSize:18, flexShrink:0 }}>📄</div>
+                        <div>
+                          <div style={{ fontWeight:700, color:"#1a1a2e", fontSize:14 }}>{fileName}</div>
+                          <div style={{ fontSize:12, color:"#999", marginTop:2 }}>{typeLabel} · {date}</div>
+                        </div>
+                      </div>
+                      <div style={{ display:"flex", alignItems:"center", gap:10 }}>
+                        <button
+                          onClick={(e) => { e.stopPropagation(); downloadDocx(r.review_text, r.file_name); }}
+                          style={{ background:"#f0ebff", color:"#6c3fc5", border:"none", borderRadius:8, padding:"6px 14px", fontSize:13, fontWeight:700, cursor:"pointer" }}
+                        >
+                          .docx
+                        </button>
+                        <div style={{ color:"#bbb", fontSize:18, transform: isOpen ? "rotate(180deg)" : "rotate(0deg)", transition:"transform 0.2s" }}>▾</div>
+                      </div>
+                    </div>
+                    {/* Expanded review text */}
+                    {isOpen && (
+                      <div style={{ borderTop:"1px solid #f0f0f0", padding:"20px", background:"#faf8ff" }}>
+                        <pre style={{ whiteSpace:"pre-wrap", fontFamily:"inherit", fontSize:13, lineHeight:1.7, color:"#333", margin:0 }}>{r.review_text}</pre>
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          )}
         </div>
 
       </div>

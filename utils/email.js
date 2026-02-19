@@ -137,5 +137,5 @@ export async function sendContactEmail({ name, email, message }) {
   <p style="background:#f5f5f5;padding:16px;border-radius:8px;">${message.replace(/\n/g, "<br>")}</p>
 </body></html>`;
   const text = `From: ${name} (${email})\n\n${message}`;
-  return sendEmail({ to: "support@doctordissertation.com", subject, html, text });
+  return sendEmail({ to: process.env.ADMIN_EMAIL || "jchick@bridgeport.edu", subject, html, text });
 }

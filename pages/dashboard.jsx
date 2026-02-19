@@ -96,12 +96,16 @@ export default function DashboardPage() {
       setStatusMsg("Synthesizing final review…");
       const finalData = await callApi({ action: "final", fileContent, fileName, documentType: docType, chunkNotes });
 
-      await fetch("/api/deduct-credit", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ userId: user.id }) });
+      // [ADDED 2025-02-19] Insert the review BEFORE deducting the credit.
+      // Original order was reversed — if the DB write failed, the user lost a credit
+      // without receiving a review. Now credit is only consumed after a successful save.
       const { data: newReview } = await supabase
         .from("reviews")
         .insert({ user_id: user.id, file_name: fileName, document_type: docType, review_text: finalData.review })
         .select()
         .single();
+      if (!newReview) throw new Error("Failed to save review. Please contact support.");
+      await fetch("/api/deduct-credit", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ userId: user.id }) });
       setReview(finalData.review);
       setStatusMsg("");
       if (newReview) setPastReviews((prev) => [newReview, ...prev]);

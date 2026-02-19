@@ -321,6 +321,16 @@ export default async function handler(req, res) {
         .join("\n\n")
         .trim();
 
+      // [ADDED 2025-02-19] Validate that Claude returned a structurally complete HAIST review.
+      // Protects against storing empty/garbled output caused by corrupted PDFs or API hiccups.
+      // Requires at least 2 of the 3 core HAIST sections to be present — if not, return 422
+      // so the client can surface a clean error and the user keeps their credit.
+      const HAIST_MARKERS = ["Executive Summary", "Strengths", "Priority Revisions"];
+      const markerCount = HAIST_MARKERS.filter((m) => finalText.includes(m)).length;
+      if (!finalText || finalText.trim().length < 100 || markerCount < 2) {
+        return res.status(422).json({ error: "Review generation incomplete. Please try again." });
+      }
+
       return res.status(200).json({
         ok: true,
         action: "final",
